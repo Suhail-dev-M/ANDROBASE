@@ -1,0 +1,6 @@
+{
+  "name": "AndroBase - Open-Source Mobile Server Platform",
+  "description": "Universal, lightweight self-hosted backend platform turning Android smartphones into personal cloud servers with Auth, Relational Database, Storage, and LAN Management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
