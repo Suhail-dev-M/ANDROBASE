@@ -51,17 +51,12 @@ async function startServer() {
   // Fallback for /api health ping
   app.get('/api/health', (req, res) => res.redirect('/api/v1/health'));
 
-  // 6. Vite middleware in development vs static serving in production
-  const isProd = process.env.NODE_ENV === 'production';
-  if (!isProd) {
-    const { createServer: createViteServer } = await import('vite');
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.resolve(__dirname, 'dist');
+  // 6. Static production serving vs optional Vite middleware in development
+  const distPath = path.resolve(__dirname, 'dist');
+  const hasDist = fs.existsSync(path.join(distPath, 'index.html'));
+  const isProd = process.env.NODE_ENV === 'production' || hasDist;
+
+  if (isProd) {
     if (fs.existsSync(distPath)) {
       app.use(express.static(distPath));
       app.get('*', (req: Request, res: Response) => {
@@ -69,6 +64,23 @@ async function startServer() {
       });
     } else {
       console.warn('[AndroBase] Production mode active but dist/ directory not found. Please run `npm run build`.');
+    }
+  } else {
+    try {
+      const { createServer: createViteServer } = await import('vite');
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: 'spa',
+      });
+      app.use(vite.middlewares);
+    } catch {
+      console.warn('[AndroBase] Vite dev middleware not loaded (running without devDependencies). Serving static dist.');
+      if (fs.existsSync(distPath)) {
+        app.use(express.static(distPath));
+        app.get('*', (req: Request, res: Response) => {
+          res.sendFile(path.resolve(distPath, 'index.html'));
+        });
+      }
     }
   }
 

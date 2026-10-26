@@ -1,11 +1,14 @@
 #!/bin/bash
 # ==============================================================================
 # AndroBase - Open-Source Mobile Server Platform
-# Automated Termux & Android Linux Installer
+# Automated Termux & Android Linux Installer with Runtime Validation
 # SPDX-License-Identifier: Apache-2.0
 # ==============================================================================
 
 set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 echo ""
 echo "============================================================"
@@ -13,8 +16,11 @@ echo "  📱 ANDROBASE INSTALLER FOR ANDROID / TERMUX"
 echo "============================================================"
 echo ""
 
+# Ensure all scripts are executable
+chmod +x "$SCRIPT_DIR"/*.sh 2>/dev/null || true
+
 # 1. Environment & Architecture Detection
-echo "[1/7] Inspecting device architecture and environment..."
+echo "[1/6] Inspecting device architecture and environment..."
 ARCH=$(uname -m)
 KERNEL=$(uname -r)
 echo "  Architecture: $ARCH"
@@ -30,7 +36,7 @@ fi
 
 # 2. Dependency Checks (Node.js & npm/coreutils)
 echo ""
-echo "[2/7] Checking runtime dependencies..."
+echo "[2/6] Checking runtime dependencies..."
 
 if ! command -v node >/dev/null 2>&1; then
   echo "  [!] Node.js is not installed."
@@ -39,40 +45,47 @@ if ! command -v node >/dev/null 2>&1; then
     pkg update -y
     pkg install -y nodejs-lts
   else
-    echo "      Please install Node.js (version 18 or newer recommended)."
+    echo "  ❌ Error: Node.js runtime not found. Please install Node.js (version 18+ recommended)."
     exit 1
   fi
 fi
 
 NODE_VER=$(node -v)
-echo "  Node.js version: $NODE_VER (OK)"
+echo "  Node.js version: $NODE_VER"
+
+# Parse major Node.js version
+NODE_MAJOR=$(echo "$NODE_VER" | tr -d 'v' | cut -d '.' -f 1)
+if [ "$NODE_MAJOR" -lt 14 ]; then
+  echo "  ⚠️ Warning: Node.js version is older than v14 (found $NODE_VER)."
+  echo "     Running in Profile A (Legacy Mobile) compatibility mode."
+fi
 
 # Check Termux API for wakelock
 if [ "$IS_TERMUX" = true ]; then
   if command -v termux-wake-lock >/dev/null 2>&1; then
-    echo "  Termux Wake-Lock: Available (OK)"
+    echo "  Termux Wake-Lock: Available"
   else
-    echo "  [!] Optional: termux-api package recommended for preventing Android CPU sleep."
-    echo "      You can install it with: pkg install termux-api"
+    echo "  [!] Recommended: Install termux-api to prevent CPU sleep during server operation:"
+    echo "      pkg install termux-api"
   fi
 fi
 
 # 3. Directory Structure Setup
 echo ""
-echo "[3/7] Creating safe application directories..."
-DATA_DIR="${HOME:-.}/.androbase"
+echo "[3/6] Configuring application directories and permissions..."
+DATA_DIR="${ANDROBASE_DATA_DIR:-${HOME:-.}/.androbase}"
 mkdir -p "$DATA_DIR/storage"
 mkdir -p "$DATA_DIR/backups"
 mkdir -p "$DATA_DIR/logs"
-chmod 700 "$DATA_DIR"
-echo "  Data directory: $DATA_DIR (mode 0700 safe)"
+chmod 700 "$DATA_DIR" 2>/dev/null || true
+echo "  Data directory: $DATA_DIR"
 
 # 4. Generate Initial Configuration (.env)
 echo ""
-echo "[4/7] Generating configuration..."
+echo "[4/6] Verifying server configuration..."
 ENV_FILE="$DATA_DIR/.env"
 if [ ! -f "$ENV_FILE" ]; then
-  JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))")
+  JWT_SECRET=$(node -e "console.log(require('crypto').randomBytes(32).toString('hex'))" 2>/dev/null || echo "androbase-fallback-secret-$RANDOM$RANDOM")
   cat <<EOF > "$ENV_FILE"
 # AndroBase Server Configuration
 HOST=0.0.0.0
@@ -84,41 +97,67 @@ ANDROBASE_ALLOW_LAN=true
 ANDROBASE_MAX_UPLOAD_BYTES=20971520
 ANDROBASE_MAX_MEMORY_MB=256
 EOF
-  chmod 600 "$ENV_FILE"
+  chmod 600 "$ENV_FILE" 2>/dev/null || true
   echo "  Configuration written to $ENV_FILE"
 else
-  echo "  Existing configuration found. Preserving current settings."
+  echo "  Existing configuration found at $ENV_FILE. Preserving settings."
 fi
 
-# 5. Install Project Dependencies
+# 5. Install Production Runtime Dependencies
 echo ""
-echo "[5/7] Installing application dependencies..."
+echo "[5/6] Installing production server dependencies (pure JS runtime)..."
+cd "$ROOT_DIR"
+
 if [ -f "package.json" ]; then
-  npm install --omit=dev --no-audit --no-fund
-  echo "  Dependencies installed successfully."
+  # Install only runtime dependencies, skipping dev/build tools and optional native addons
+  if ! npm install --omit=dev --omit=optional --legacy-peer-deps --no-audit --no-fund; then
+    echo "❌ Error: npm install failed. Please inspect npm error logs above."
+    exit 1
+  fi
+
+  # Pre-flight check: ensure critical runtime packages load cleanly
+  if ! node -e "require('express'); require('multer'); require('dotenv');" >/dev/null 2>&1; then
+    echo "❌ Error: Installed packages could not be resolved by Node.js."
+    exit 1
+  fi
+  echo "  Runtime dependencies installed and verified."
 fi
 
-# 6. Pre-flight Capability Test
+# 6. Verify Server Entry Point
 echo ""
-echo "[6/7] Running pre-flight system diagnostics..."
-node -e "console.log('  V8 Heap Limit:', Math.round(require('v8').getHeapStatistics().heap_size_limit / (1024*1024)) + ' MB');"
+echo "[6/6] Verifying server entry point..."
+if [ -f "$ROOT_DIR/server.js" ]; then
+  echo "  Found production server bundle: server.js (Ready for execution)"
+elif [ -f "$ROOT_DIR/server.ts" ]; then
+  if command -v tsx >/dev/null 2>&1 || command -v npx >/dev/null 2>&1; then
+    echo "  Found server.ts with TypeScript runtime (Ready for development)"
+  else
+    echo "  ⚠️ Warning: 'server.js' not found. If this is a production device, ensure"
+    echo "     the project was built on a PC/CI runner ('npm run build') before deployment."
+  fi
+else
+  echo "❌ Error: Neither 'server.js' nor 'server.ts' was found in $ROOT_DIR."
+  exit 1
+fi
 
-# 7. Complete & Instructions
 echo ""
 echo "============================================================"
-echo "  ✅ ANDROBASE INSTALLATION COMPLETE!"
+echo "  ✅ ANDROBASE INSTALLATION VERIFIED SUCCESSFULLY!"
 echo "============================================================"
 echo ""
-echo "To start the server now:"
-echo "  ./scripts/service.sh start"
+echo "To start the background server daemon:"
+echo "  bash scripts/service.sh start"
 echo ""
-echo "Or start directly with Node:"
-echo "  node server.ts"
+echo "To check server status and HTTP health:"
+echo "  bash scripts/service.sh status"
+echo ""
+echo "To stop the server daemon:"
+echo "  bash scripts/service.sh stop"
+echo ""
+echo "Or start directly in the foreground:"
+echo "  node server.js"
 echo ""
 echo "Dashboard will be accessible at:"
 echo "  Local: http://127.0.0.1:3000"
 echo "  LAN:   http://<YOUR_PHONE_WIFI_IP>:3000"
-echo ""
-echo "Important: Acquire wakelock in Termux to prevent sleep:"
-echo "  termux-wake-lock"
 echo "============================================================"

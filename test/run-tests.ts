@@ -8,6 +8,7 @@ import assert from 'assert';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
+import { execSync } from 'child_process';
 import { db, PortableDatabase } from '../src/server/db/portable-db.ts';
 import { AuthService } from '../src/server/security/auth.ts';
 import { CapabilityDetector } from '../src/server/detector.ts';
@@ -169,6 +170,34 @@ async function runAllTests() {
 
     const verify = BackupManager.verifyBackupIntegrity(backup.filename);
     assert.strictEqual(verify.valid, true, 'Backup passes integrity verification');
+  });
+
+  console.log('\n--- 6. REGRESSION TESTS: Mobile Build, Dependency Separation & Scripts ---');
+  await test('Runtime dependencies are separated from dev/build tools', () => {
+    const pkgPath = path.resolve(process.cwd(), 'package.json');
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+    const prodDeps = Object.keys(pkg.dependencies || {});
+
+    // Ensure frontend build tools are never in production dependencies
+    assert.strictEqual(prodDeps.includes('vite'), false, 'vite must be in devDependencies');
+    assert.strictEqual(prodDeps.includes('@tailwindcss/vite'), false, '@tailwindcss/vite must be in devDependencies');
+    assert.strictEqual(prodDeps.includes('esbuild'), false, 'esbuild must be in devDependencies');
+    assert.ok(prodDeps.includes('express'), 'express must be in production dependencies');
+    assert.ok(prodDeps.includes('multer'), 'multer must be in production dependencies');
+  });
+
+  await test('Compiled production server bundle (server.js) is valid JavaScript', () => {
+    const serverJsPath = path.resolve(process.cwd(), 'server.js');
+    assert.ok(fs.existsSync(serverJsPath), 'server.js must exist after build');
+    const content = fs.readFileSync(serverJsPath, 'utf8');
+    // Ensure no raw TypeScript type annotations exist in output
+    assert.strictEqual(content.includes(': Request,'), false, 'server.js must not contain raw TypeScript parameter annotations');
+    assert.ok(content.length > 1000, 'server.js should be a bundled artifact');
+  });
+
+  await test('Service and installer shell scripts pass bash syntax verification', () => {
+    execSync('bash -n scripts/install.sh', { stdio: 'pipe' });
+    execSync('bash -n scripts/service.sh', { stdio: 'pipe' });
   });
 
   console.log('\n============================================================');

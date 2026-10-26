@@ -78,17 +78,36 @@ Detailed architectural specifications are available in [docs/ARCHITECTURE.md](do
 Inside the Termux terminal on your Android device:
 
 ```bash
-pkg update -y && pkg install -y git nodejs-lts
+pkg update -y && pkg install -y
+pkg install nodejs-lts
 git clone https://github.com/Suhail-dev-M/ANDROBASE.git
 cd ANDROBASE
-./scripts/install.sh
+chmod +x ./scripts/install.sh
+bash scripts/install.sh
 ```
 
 ### Start the Service
 
 ```bash
-./scripts/service.sh start
+chmod +x ./scripts/service.sh
+# Start background daemon with health verification and wakelock:
+bash scripts/service.sh start
+
+# Or run directly in foreground with pure Node:
+node server.js
 ```
+
+### Check Service Status & HTTP Health
+
+```bash
+bash scripts/service.sh status
+```
+
+### Development vs Production Mobile Architecture
+
+To support low-spec Android devices and older Node.js runtimes without freezing CPU or failing native binary compilations:
+- **Development & Build (PC / CI Runner)**: The frontend and server are compiled into static distribution assets (`dist/`) and a standalone JavaScript bundle (`server.js`) via `npm run build`.
+- **Target Mobile Runtime (Android / Termux)**: The phone only installs lightweight, pure-JavaScript production dependencies (`express`, `multer`, `dotenv`). It does **not** compile code, run native NDK toolchains, or require heavy build tools like `vite`, `esbuild`, or `tsx` at runtime.
 
 ### First-Run Setup & Admin Bootstrap
 

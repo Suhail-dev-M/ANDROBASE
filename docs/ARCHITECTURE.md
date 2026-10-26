@@ -52,3 +52,20 @@ To avoid dependency on native C++ compilation, AndroBase features an independent
 - **Write-Ahead Log (WAL)**: Journal changes before committing.
 - **Schema Migrations**: Tracks version history in `_androbase_migrations`.
 - **Query Engine**: Supports parameterized filtering (`eq`, `neq`, `gt`, `gte`, `lt`, `lte`, `contains`, `in`), sorting, and hard-bounded pagination (maximum 1,000 rows per query) to avoid memory spikes.
+
+---
+
+## Separated Build & Runtime Architecture
+
+To ensure flawless installation on resource-constrained Android smartphones without encountering compiler failures, missing NDK toolchains, or unsupported Node.js engine versions:
+
+1. **Development & Compilation Phase (PC / CI Runner)**:
+   - Modern development tools (`vite`, `esbuild`, `tailwindcss`, `typescript`, `@types/*`) compile the client React application into static assets in `dist/`.
+   - The backend `server.ts` is bundled into a standalone `server.js` targeting Node.js 14+ (`esbuild server.ts --bundle --platform=node --format=esm --target=node14 --outfile=server.js ...`).
+   - All TypeScript parameter and type annotations are stripped; modern syntax features (like optional chaining and nullish coalescing) are safely down-leveled.
+
+2. **Mobile Runtime Execution Phase (Android Smartphone / Termux)**:
+   - The smartphone only needs to install pure-JavaScript production dependencies (`express`, `multer`, `dotenv`).
+   - The server is launched via `node server.js` (or managed as a background daemon via `bash scripts/service.sh start`).
+   - No compiler, native binary wrappers, or heavy dev tools ever run on the phone.
+   - The background daemon actively monitors process survival and verifies HTTP response on `/api/v1/health` before confirming startup.
