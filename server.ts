@@ -13,6 +13,7 @@ import { apiRouter } from './src/server/api/router.ts';
 import { CapabilityDetector } from './src/server/detector.ts';
 import { NetworkManager } from './src/server/network/manager.ts';
 import { AuthService } from './src/server/security/auth.ts';
+import { getEmbeddedDashboardHtml } from './src/server/embedded-ui.ts';
 
 // Universal directory resolution compatible with CommonJS bundles and TS loaders
 const appDir = typeof __dirname !== 'undefined' ? __dirname : process.cwd();
@@ -52,57 +53,20 @@ async function startServer() {
 
   // 6. Static production serving vs optional Vite middleware in development
   const distPath = path.resolve(appDir, 'dist');
-  const hasDist = fs.existsSync(path.join(distPath, 'index.html'));
-  const isProd = process.env.NODE_ENV === 'production' || hasDist;
-
-  const fallbackHtml = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AndroBase — Server Running</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #f8fafc; padding: 2rem; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; box-sizing: border-box; }
-    .card { background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 2rem; max-width: 600px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); }
-    h1 { font-size: 1.5rem; margin-top: 0; color: #38bdf8; }
-    p { color: #94a3b8; line-height: 1.6; }
-    .badge { display: inline-block; background: #166534; color: #4ade80; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.85rem; font-weight: 600; margin-bottom: 1rem; }
-    .code { background: #0f172a; padding: 0.75rem 1rem; border-radius: 8px; font-family: monospace; font-size: 0.9rem; color: #e2e8f0; border: 1px solid #334155; overflow-x: auto; margin: 1rem 0; }
-    a { color: #38bdf8; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    ul { padding-left: 1.25rem; color: #94a3b8; }
-    li { margin-bottom: 0.5rem; }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <div class="badge">● Server Active &amp; Healthy</div>
-    <h1>📱 ANDROBASE Mobile Server</h1>
-    <p>The AndroBase backend service is running successfully on this device!</p>
-    <p><strong>Notice:</strong> The pre-compiled web dashboard bundle (<code>dist/index.html</code>) was not found in the project root.</p>
-    <p>To enable the web dashboard, compile the client assets on your development machine and commit or copy the <code>dist/</code> folder:</p>
-    <div class="code">npm run build</div>
-    <p>In the meantime, all REST API endpoints are fully operational:</p>
-    <ul>
-      <li><a href="/api/v1/health">/api/v1/health</a> — System &amp; Hardware Health</li>
-      <li><a href="/api/v1/status">/api/v1/status</a> — Telemetry &amp; Profile Information</li>
-    </ul>
-  </div>
-</body>
-</html>`;
+  const isProd = process.env.NODE_ENV === 'production' || fs.existsSync(path.join(distPath, 'index.html'));
 
   if (isProd) {
-    if (hasDist) {
+    if (fs.existsSync(distPath)) {
       app.use(express.static(distPath));
-      app.get('*', (req: Request, res: Response) => {
-        res.sendFile(path.resolve(distPath, 'index.html'));
-      });
-    } else {
-      console.warn('[AndroBase] Production mode active but dist/index.html not found. Serving informative fallback.');
-      app.get('*', (req: Request, res: Response) => {
-        res.status(200).type('html').send(fallbackHtml);
-      });
     }
+    app.get('*', (req: Request, res: Response) => {
+      const htmlFile = path.resolve(distPath, 'index.html');
+      if (fs.existsSync(htmlFile)) {
+        res.sendFile(htmlFile);
+      } else {
+        res.status(200).type('html').send(getEmbeddedDashboardHtml());
+      }
+    });
   } else {
     try {
       const { createServer: createViteServer } = await import('vite');
@@ -112,7 +76,7 @@ async function startServer() {
       });
       app.use(vite.middlewares);
     } catch {
-      console.warn('[AndroBase] Vite dev middleware not loaded. Serving static dist or fallback.');
+      const hasDist = fs.existsSync(distPath) && fs.existsSync(path.join(distPath, 'index.html'));
       if (hasDist) {
         app.use(express.static(distPath));
         app.get('*', (req: Request, res: Response) => {
@@ -120,7 +84,7 @@ async function startServer() {
         });
       } else {
         app.get('*', (req: Request, res: Response) => {
-          res.status(200).type('html').send(fallbackHtml);
+          res.status(200).type('html').send(getEmbeddedDashboardHtml());
         });
       }
     }
