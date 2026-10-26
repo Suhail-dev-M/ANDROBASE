@@ -32,7 +32,9 @@ release_wakelock() {
 }
 
 find_entry_point() {
-  if [ -f "$ROOT_DIR/server.js" ]; then
+  if [ -f "$ROOT_DIR/server.cjs" ]; then
+    echo "node|$ROOT_DIR/server.cjs"
+  elif [ -f "$ROOT_DIR/server.js" ]; then
     echo "node|$ROOT_DIR/server.js"
   elif [ -f "$ROOT_DIR/server.ts" ] && command -v tsx >/dev/null 2>&1; then
     echo "tsx|$ROOT_DIR/server.ts"

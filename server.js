@@ -1,52 +1,67 @@
-var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
-  get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
-}) : x)(function(x) {
-  if (typeof require !== "undefined") return require.apply(this, arguments);
-  throw Error('Dynamic require of "' + x + '" is not supported');
-});
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
 
 // server.ts
-import express from "express";
-import path7 from "path";
-import fs8 from "fs";
-import { fileURLToPath } from "url";
+var import_express2 = __toESM(require("express"));
+var import_path7 = __toESM(require("path"));
+var import_fs8 = __toESM(require("fs"));
 
 // src/server/config.ts
-import path from "path";
-import fs from "fs";
+var import_path = __toESM(require("path"));
+var import_fs = __toESM(require("fs"));
 var getDefaultDataDir = () => {
   var _a;
   if (process.env.ANDROBASE_DATA_DIR) {
-    return path.resolve(process.env.ANDROBASE_DATA_DIR);
+    return import_path.default.resolve(process.env.ANDROBASE_DATA_DIR);
   }
   if (process.env.TERMUX_VERSION || ((_a = process.env.PREFIX) == null ? void 0 : _a.includes("com.termux"))) {
     const termuxHome = process.env.HOME || "/data/data/com.termux/files/home";
-    return path.join(termuxHome, ".androbase");
+    return import_path.default.join(termuxHome, ".androbase");
   }
-  return path.resolve(process.cwd(), ".androbase_data");
+  return import_path.default.resolve(process.cwd(), ".androbase_data");
 };
 var dataDir = getDefaultDataDir();
-var storageDir = path.join(dataDir, "storage");
-var backupsDir = path.join(dataDir, "backups");
-var logsDir = path.join(dataDir, "logs");
-var dbPath = path.join(dataDir, "androbase.db.json");
+var storageDir = import_path.default.join(dataDir, "storage");
+var backupsDir = import_path.default.join(dataDir, "backups");
+var logsDir = import_path.default.join(dataDir, "logs");
+var dbPath = import_path.default.join(dataDir, "androbase.db.json");
 [dataDir, storageDir, backupsDir, logsDir].forEach((dir) => {
   try {
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true, mode: 448 });
+    if (!import_fs.default.existsSync(dir)) {
+      import_fs.default.mkdirSync(dir, { recursive: true, mode: 448 });
     }
   } catch (err) {
     console.error(`[AndroBase Config] Failed to create directory: ${dir}`, err);
   }
 });
-var bootstrapTokenPath = path.join(dataDir, ".bootstrap_token");
+var bootstrapTokenPath = import_path.default.join(dataDir, ".bootstrap_token");
 var bootstrapToken = "";
-if (fs.existsSync(bootstrapTokenPath)) {
-  bootstrapToken = fs.readFileSync(bootstrapTokenPath, "utf8").trim();
+if (import_fs.default.existsSync(bootstrapTokenPath)) {
+  bootstrapToken = import_fs.default.readFileSync(bootstrapTokenPath, "utf8").trim();
 } else {
   bootstrapToken = Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
   try {
-    fs.writeFileSync(bootstrapTokenPath, bootstrapToken, { mode: 384 });
+    import_fs.default.writeFileSync(bootstrapTokenPath, bootstrapToken, { mode: 384 });
   } catch {
   }
 }
@@ -76,9 +91,9 @@ var config = {
 };
 
 // src/server/db/portable-db.ts
-import fs2 from "fs";
-import path2 from "path";
-import crypto from "crypto";
+var import_fs2 = __toESM(require("fs"));
+var import_path2 = __toESM(require("path"));
+var import_crypto = __toESM(require("crypto"));
 var PortableDatabase = class {
   constructor(dbPath2 = config.dbPath) {
     this.payload = {
@@ -95,19 +110,19 @@ var PortableDatabase = class {
   }
   async initialize() {
     if (this.isInitialized) return;
-    const dbDir = path2.dirname(this.dbPath);
-    if (!fs2.existsSync(dbDir)) {
-      fs2.mkdirSync(dbDir, { recursive: true, mode: 448 });
+    const dbDir = import_path2.default.dirname(this.dbPath);
+    if (!import_fs2.default.existsSync(dbDir)) {
+      import_fs2.default.mkdirSync(dbDir, { recursive: true, mode: 448 });
     }
     this.recoverFromWal();
-    if (fs2.existsSync(this.dbPath)) {
+    if (import_fs2.default.existsSync(this.dbPath)) {
       try {
-        const raw = fs2.readFileSync(this.dbPath, "utf8");
+        const raw = import_fs2.default.readFileSync(this.dbPath, "utf8");
         this.payload = JSON.parse(raw);
       } catch (err) {
         console.error("[AndroBase DB] Corrupted DB file. Backing up and attempting recovery...", err);
         const backupCorrupt = `${this.dbPath}.corrupt-${Date.now()}`;
-        fs2.copyFileSync(this.dbPath, backupCorrupt);
+        import_fs2.default.copyFileSync(this.dbPath, backupCorrupt);
         this.payload = { version: 1, schemas: {}, tables: {} };
       }
     } else {
@@ -118,12 +133,12 @@ var PortableDatabase = class {
     this.isInitialized = true;
   }
   recoverFromWal() {
-    if (fs2.existsSync(this.walPath)) {
+    if (import_fs2.default.existsSync(this.walPath)) {
       try {
-        const walContent = fs2.readFileSync(this.walPath, "utf8");
+        const walContent = import_fs2.default.readFileSync(this.walPath, "utf8");
         const lines = walContent.split("\n").filter(Boolean);
         console.warn(`[AndroBase DB] Found uncommitted WAL with ${lines.length} operations. Safe recovery in progress...`);
-        fs2.unlinkSync(this.walPath);
+        import_fs2.default.unlinkSync(this.walPath);
       } catch {
       }
     }
@@ -284,6 +299,7 @@ var PortableDatabase = class {
   }
   // Parameterized query execution with filtering, pagination, and sorting
   query(tableName, options = {}) {
+    var _a, _b;
     const table = this.payload.tables[tableName];
     if (!table) {
       throw new Error(`Table "${tableName}" does not exist.`);
@@ -307,7 +323,7 @@ var PortableDatabase = class {
             case "lte":
               return Number(val) <= Number(filter.value);
             case "contains":
-              return String(val ?? "").toLowerCase().includes(String(filter.value).toLowerCase());
+              return String(val != null ? val : "").toLowerCase().includes(String(filter.value).toLowerCase());
             case "in":
               return Array.isArray(filter.value) && filter.value.includes(val);
             default:
@@ -329,8 +345,8 @@ var PortableDatabase = class {
       });
     }
     const total = results.length;
-    const limit = Math.min(options.limit ?? 50, 1e3);
-    const offset = Math.max(options.offset ?? 0, 0);
+    const limit = Math.min((_a = options.limit) != null ? _a : 50, 1e3);
+    const offset = Math.max((_b = options.offset) != null ? _b : 0, 0);
     const paginated = results.slice(offset, offset + limit);
     return {
       data: paginated,
@@ -357,7 +373,7 @@ var PortableDatabase = class {
     const pk = schema.primaryKey;
     const newRecord = { ...record };
     if (!newRecord[pk]) {
-      newRecord[pk] = crypto.randomUUID();
+      newRecord[pk] = import_crypto.default.randomUUID();
     }
     const table = this.payload.tables[tableName];
     for (const col of schema.columns) {
@@ -436,11 +452,11 @@ var PortableDatabase = class {
     const tempPath = `${this.dbPath}.tmp.${Date.now()}`;
     const serialized = JSON.stringify(this.payload, null, 2);
     try {
-      fs2.writeFileSync(tempPath, serialized, { mode: 384 });
-      fs2.renameSync(tempPath, this.dbPath);
+      import_fs2.default.writeFileSync(tempPath, serialized, { mode: 384 });
+      import_fs2.default.renameSync(tempPath, this.dbPath);
     } catch (err) {
       try {
-        if (fs2.existsSync(tempPath)) fs2.unlinkSync(tempPath);
+        if (import_fs2.default.existsSync(tempPath)) import_fs2.default.unlinkSync(tempPath);
       } catch {
       }
       throw err;
@@ -475,8 +491,8 @@ var PortableDatabase = class {
     });
     let sizeBytes = 0;
     try {
-      if (fs2.existsSync(this.dbPath)) {
-        sizeBytes = fs2.statSync(this.dbPath).size;
+      if (import_fs2.default.existsSync(this.dbPath)) {
+        sizeBytes = import_fs2.default.statSync(this.dbPath).size;
       }
     } catch {
     }
@@ -490,23 +506,23 @@ var PortableDatabase = class {
 var db = new PortableDatabase();
 
 // src/server/api/router.ts
-import { Router } from "express";
-import multer from "multer";
-import os3 from "os";
-import fs7 from "fs";
+var import_express = require("express");
+var import_multer = __toESM(require("multer"));
+var import_os3 = __toESM(require("os"));
+var import_fs7 = __toESM(require("fs"));
 
 // src/server/security/auth.ts
-import crypto3 from "crypto";
+var import_crypto3 = __toESM(require("crypto"));
 
 // src/server/audit/logger.ts
-import fs3 from "fs";
-import path3 from "path";
-import crypto2 from "crypto";
+var import_fs3 = __toESM(require("fs"));
+var import_path3 = __toESM(require("path"));
+var import_crypto2 = __toESM(require("crypto"));
 var AuditLogger = class {
   // 2MB max log file on mobile flash
   static log(entry) {
     const fullEntry = {
-      id: crypto2.randomUUID(),
+      id: import_crypto2.default.randomUUID(),
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       ...entry
     };
@@ -517,23 +533,23 @@ var AuditLogger = class {
     try {
       this.rotateIfNeeded();
       const line = JSON.stringify(fullEntry) + "\n";
-      fs3.appendFileSync(this.logFilePath, line, "utf8");
+      import_fs3.default.appendFileSync(this.logFilePath, line, "utf8");
     } catch (err) {
       console.error("[AndroBase Audit] Failed to write audit log line:", err);
     }
   }
   static rotateIfNeeded() {
     try {
-      if (fs3.existsSync(this.logFilePath)) {
-        const stat = fs3.statSync(this.logFilePath);
+      if (import_fs3.default.existsSync(this.logFilePath)) {
+        const stat = import_fs3.default.statSync(this.logFilePath);
         if (stat.size > this.maxLogSizeBytes) {
           const rotated = `${this.logFilePath}.${Date.now()}.bak`;
-          fs3.renameSync(this.logFilePath, rotated);
-          const files = fs3.readdirSync(config.logsDir);
+          import_fs3.default.renameSync(this.logFilePath, rotated);
+          const files = import_fs3.default.readdirSync(config.logsDir);
           const baks = files.filter((f) => f.startsWith("androbase-audit.log.") && f.endsWith(".bak")).sort().reverse();
           baks.slice(2).forEach((oldBak) => {
             try {
-              fs3.unlinkSync(path3.join(config.logsDir, oldBak));
+              import_fs3.default.unlinkSync(import_path3.default.join(config.logsDir, oldBak));
             } catch {
             }
           });
@@ -555,16 +571,16 @@ var AuditLogger = class {
     }
   }
 };
-AuditLogger.logFilePath = path3.join(config.logsDir, "androbase-audit.log");
+AuditLogger.logFilePath = import_path3.default.join(config.logsDir, "androbase-audit.log");
 AuditLogger.maxLogSizeBytes = 1024 * 1024 * 2;
 
 // src/server/security/auth.ts
 var AuthService = class {
   // 15 mins
   static hashPassword(password, saltHex) {
-    const salt = saltHex ? Buffer.from(saltHex, "hex") : crypto3.randomBytes(16);
+    const salt = saltHex ? Buffer.from(saltHex, "hex") : import_crypto3.default.randomBytes(16);
     const iterations = 1e4;
-    const derivedKey = crypto3.pbkdf2Sync(password, salt, iterations, 32, "sha256");
+    const derivedKey = import_crypto3.default.pbkdf2Sync(password, salt, iterations, 32, "sha256");
     return {
       hash: derivedKey.toString("hex"),
       salt: salt.toString("hex")
@@ -573,15 +589,15 @@ var AuthService = class {
   static verifyPassword(password, storedHash, saltHex) {
     const salt = Buffer.from(saltHex, "hex");
     const iterations = 1e4;
-    const derivedKey = crypto3.pbkdf2Sync(password, salt, iterations, 32, "sha256");
+    const derivedKey = import_crypto3.default.pbkdf2Sync(password, salt, iterations, 32, "sha256");
     const storedBuf = Buffer.from(storedHash, "hex");
     if (derivedKey.length !== storedBuf.length) {
       return false;
     }
-    return crypto3.timingSafeEqual(derivedKey, storedBuf);
+    return import_crypto3.default.timingSafeEqual(derivedKey, storedBuf);
   }
   static hashToken(token) {
-    return crypto3.createHash("sha256").update(token).digest("hex");
+    return import_crypto3.default.createHash("sha256").update(token).digest("hex");
   }
   static checkRateLimit(ip) {
     const now = Date.now();
@@ -639,7 +655,7 @@ var AuthService = class {
       throw new Error("Password must be at least 8 characters.");
     }
     const { hash, salt } = this.hashPassword(params.password);
-    const userId = crypto3.randomUUID();
+    const userId = import_crypto3.default.randomUUID();
     const userRecord = {
       id: userId,
       username: params.username.trim().toLowerCase(),
@@ -676,7 +692,7 @@ var AuthService = class {
       throw new Error("Password must be at least 8 characters long.");
     }
     const { hash, salt } = this.hashPassword(params.password);
-    const userId = crypto3.randomUUID();
+    const userId = import_crypto3.default.randomUUID();
     const user = {
       id: userId,
       username,
@@ -760,11 +776,11 @@ var AuthService = class {
     return this.createSession(user, ip, userAgent);
   }
   static createSession(user, ip, userAgent) {
-    const token = crypto3.randomBytes(32).toString("hex");
+    const token = import_crypto3.default.randomBytes(32).toString("hex");
     const tokenHash = this.hashToken(token);
     const expiresAt = new Date(Date.now() + config.sessionTtlHours * 60 * 60 * 1e3).toISOString();
     const session = {
-      id: crypto3.randomUUID(),
+      id: import_crypto3.default.randomUUID(),
       userId: user.id,
       tokenHash,
       createdAt: (/* @__PURE__ */ new Date()).toISOString(),
@@ -847,11 +863,11 @@ AuthService.MAX_ATTEMPTS = 5;
 AuthService.LOCKOUT_MS = 15 * 60 * 1e3;
 
 // src/server/detector.ts
-import os from "os";
-import fs4 from "fs";
-import path4 from "path";
-import crypto4 from "crypto";
-import { execSync } from "child_process";
+var import_os = __toESM(require("os"));
+var import_fs4 = __toESM(require("fs"));
+var import_path4 = __toESM(require("path"));
+var import_crypto4 = __toESM(require("crypto"));
+var import_child_process = require("child_process");
 var PROFILES = {
   profile_a: {
     id: "profile_a",
@@ -887,22 +903,22 @@ var _CapabilityDetector = class _CapabilityDetector {
     const checks = [];
     const securityWarnings = [];
     const recommendations = [];
-    const totalMemMb = Math.round(os.totalmem() / (1024 * 1024));
-    const freeMemMb = Math.round(os.freemem() / (1024 * 1024));
-    const arch = os.arch();
-    const platform = os.platform();
-    const release = os.release();
+    const totalMemMb = Math.round(import_os.default.totalmem() / (1024 * 1024));
+    const freeMemMb = Math.round(import_os.default.freemem() / (1024 * 1024));
+    const arch = import_os.default.arch();
+    const platform = import_os.default.platform();
+    const release = import_os.default.release();
     let isAndroid = platform === "android" || !!process.env.ANDROID_ROOT;
     let isTermux = !!process.env.TERMUX_VERSION || !!((_a = process.env.PREFIX) == null ? void 0 : _a.includes("com.termux"));
     let termuxVersion = process.env.TERMUX_VERSION;
     let androidApiLevel;
-    if (fs4.existsSync("/data/data/com.termux")) {
+    if (import_fs4.default.existsSync("/data/data/com.termux")) {
       isTermux = true;
     }
     try {
-      if (fs4.existsSync("/system/build.prop")) {
+      if (import_fs4.default.existsSync("/system/build.prop")) {
         isAndroid = true;
-        const prop = fs4.readFileSync("/system/build.prop", "utf8");
+        const prop = import_fs4.default.readFileSync("/system/build.prop", "utf8");
         const apiMatch = prop.match(/ro\.build\.version\.sdk=(\d+)/);
         if (apiMatch) {
           androidApiLevel = parseInt(apiMatch[1], 10);
@@ -943,8 +959,8 @@ var _CapabilityDetector = class _CapabilityDetector {
     });
     let cryptoOk = false;
     try {
-      const testSalt = crypto4.randomBytes(16);
-      const testHash = crypto4.pbkdf2Sync("testPassword123", testSalt, 1e3, 32, "sha256");
+      const testSalt = import_crypto4.default.randomBytes(16);
+      const testHash = import_crypto4.default.pbkdf2Sync("testPassword123", testSalt, 1e3, 32, "sha256");
       cryptoOk = testHash.length === 32;
     } catch {
       cryptoOk = false;
@@ -964,9 +980,9 @@ var _CapabilityDetector = class _CapabilityDetector {
     let storageWritable = false;
     let freeStorageMb = 2048;
     try {
-      const testFile = path4.join(config.dataDir, `.write_test_${Date.now()}`);
-      fs4.writeFileSync(testFile, "test");
-      fs4.unlinkSync(testFile);
+      const testFile = import_path4.default.join(config.dataDir, `.write_test_${Date.now()}`);
+      import_fs4.default.writeFileSync(testFile, "test");
+      import_fs4.default.unlinkSync(testFile);
       storageWritable = true;
     } catch (e) {
       storageWritable = false;
@@ -983,7 +999,7 @@ var _CapabilityDetector = class _CapabilityDetector {
     let wakelockAvailable = false;
     if (isTermux) {
       try {
-        execSync("command -v termux-wake-lock", { stdio: "pipe" });
+        (0, import_child_process.execSync)("command -v termux-wake-lock", { stdio: "pipe" });
         wakelockAvailable = true;
       } catch {
         wakelockAvailable = false;
@@ -1001,7 +1017,7 @@ var _CapabilityDetector = class _CapabilityDetector {
     if (isAndroid && !wakelockAvailable) {
       recommendations.push('Run "termux-wake-lock" and disable Battery Optimization for Termux in Android Settings to prevent sleep termination.');
     }
-    const networkInterfaces = os.networkInterfaces();
+    const networkInterfaces = import_os.default.networkInterfaces();
     let hasLanIp = false;
     let lanAddresses = [];
     Object.entries(networkInterfaces).forEach(([name, ifaces]) => {
@@ -1047,7 +1063,7 @@ var _CapabilityDetector = class _CapabilityDetector {
         isTermux,
         termuxVersion,
         androidApiLevel,
-        cpuCores: os.cpus().length,
+        cpuCores: import_os.default.cpus().length,
         totalMemoryMb: totalMemMb,
         freeMemoryMb: freeMemMb,
         heapLimitMb: Math.round(v8HeapLimitMb()),
@@ -1072,7 +1088,7 @@ _CapabilityDetector.cachedReport = null;
 var CapabilityDetector = _CapabilityDetector;
 function v8HeapLimitMb() {
   try {
-    const v8 = __require("v8");
+    const v8 = require("v8");
     const stats = v8.getHeapStatistics();
     return stats.heap_size_limit / (1024 * 1024);
   } catch {
@@ -1081,9 +1097,9 @@ function v8HeapLimitMb() {
 }
 
 // src/server/storage/file-storage.ts
-import fs5 from "fs";
-import path5 from "path";
-import crypto5 from "crypto";
+var import_fs5 = __toESM(require("fs"));
+var import_path5 = __toESM(require("path"));
+var import_crypto5 = __toESM(require("crypto"));
 var DISALLOWED_EXTENSIONS = /* @__PURE__ */ new Set([
   ".exe",
   ".apk",
@@ -1101,17 +1117,17 @@ var DISALLOWED_EXTENSIONS = /* @__PURE__ */ new Set([
 ]);
 var FileStorageService = class {
   static sanitizeFilename(originalName) {
-    const base = path5.basename(originalName);
+    const base = import_path5.default.basename(originalName);
     return base.replace(/[^a-zA-Z0-9._-]/g, "_");
   }
   static isExtensionAllowed(filename) {
-    const ext = path5.extname(filename).toLowerCase();
+    const ext = import_path5.default.extname(filename).toLowerCase();
     return !DISALLOWED_EXTENSIONS.has(ext);
   }
   static validatePathSafe(storageName) {
-    const safeTarget = path5.normalize(path5.join(this.storageRoot, storageName));
-    const relative = path5.relative(this.storageRoot, safeTarget);
-    if (relative.startsWith("..") || path5.isAbsolute(relative)) {
+    const safeTarget = import_path5.default.normalize(import_path5.default.join(this.storageRoot, storageName));
+    const relative = import_path5.default.relative(this.storageRoot, safeTarget);
+    if (relative.startsWith("..") || import_path5.default.isAbsolute(relative)) {
       throw new Error("Path traversal detected. Access rejected.");
     }
     return safeTarget;
@@ -1125,18 +1141,18 @@ var FileStorageService = class {
       throw new Error("Execution hazard: File extension is not permitted for storage.");
     }
     const cleanBaseName = this.sanitizeFilename(originalName);
-    const fileId = crypto5.randomUUID();
-    const sha256 = crypto5.createHash("sha256").update(buffer).digest("hex");
+    const fileId = import_crypto5.default.randomUUID();
+    const sha256 = import_crypto5.default.createHash("sha256").update(buffer).digest("hex");
     const storageName = `${fileId}_${cleanBaseName}`;
     const destinationPath = this.validatePathSafe(storageName);
     const tempPath = `${destinationPath}.upload.${Date.now()}`;
     try {
-      fs5.writeFileSync(tempPath, buffer, { mode: 384 });
-      fs5.renameSync(tempPath, destinationPath);
+      import_fs5.default.writeFileSync(tempPath, buffer, { mode: 384 });
+      import_fs5.default.renameSync(tempPath, destinationPath);
     } catch (err) {
-      if (fs5.existsSync(tempPath)) {
+      if (import_fs5.default.existsSync(tempPath)) {
         try {
-          fs5.unlinkSync(tempPath);
+          import_fs5.default.unlinkSync(tempPath);
         } catch {
         }
       }
@@ -1178,9 +1194,9 @@ var FileStorageService = class {
       throw new Error("Access denied: You do not have permission to delete this file.");
     }
     const fullPath = this.getFilePath(record);
-    if (fs5.existsSync(fullPath)) {
+    if (import_fs5.default.existsSync(fullPath)) {
       try {
-        fs5.unlinkSync(fullPath);
+        import_fs5.default.unlinkSync(fullPath);
       } catch (err) {
         console.error("[AndroBase Storage] Failed to delete physical file:", err);
       }
@@ -1217,16 +1233,16 @@ var FileStorageService = class {
 FileStorageService.storageRoot = config.storageDir;
 
 // src/server/backup/manager.ts
-import fs6 from "fs";
-import path6 from "path";
-import crypto6 from "crypto";
+var import_fs6 = __toESM(require("fs"));
+var import_path6 = __toESM(require("path"));
+var import_crypto6 = __toESM(require("crypto"));
 var BackupManager = class {
   static async createBackup(createdBy = "system") {
     var _a;
     const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
-    const backupId = crypto6.randomUUID();
+    const backupId = import_crypto6.default.randomUUID();
     const filename = `androbase_backup_${timestamp}.json`;
-    const targetFilePath = path6.join(this.backupsDir, filename);
+    const targetFilePath = import_path6.default.join(this.backupsDir, filename);
     const dbDump = db.getRawDump();
     const files = db.query("_files").data;
     const fileInventory = files.map((f) => ({
@@ -1262,14 +1278,14 @@ var BackupManager = class {
       fileInventory
     };
     const serialized = JSON.stringify(archive, null, 2);
-    const sha256 = crypto6.createHash("sha256").update(serialized).digest("hex");
+    const sha256 = import_crypto6.default.createHash("sha256").update(serialized).digest("hex");
     const sizeBytes = Buffer.byteLength(serialized, "utf8");
     archive.metadata.sha256 = sha256;
     archive.metadata.sizeBytes = sizeBytes;
     const finalSerialized = JSON.stringify(archive, null, 2);
     const tempPath = `${targetFilePath}.tmp`;
-    fs6.writeFileSync(tempPath, finalSerialized, { mode: 384 });
-    fs6.renameSync(tempPath, targetFilePath);
+    import_fs6.default.writeFileSync(tempPath, finalSerialized, { mode: 384 });
+    import_fs6.default.renameSync(tempPath, targetFilePath);
     AuditLogger.log({
       action: "backup.created",
       username: createdBy,
@@ -1281,14 +1297,14 @@ var BackupManager = class {
     return archive.metadata;
   }
   static listBackups() {
-    if (!fs6.existsSync(this.backupsDir)) return [];
-    const files = fs6.readdirSync(this.backupsDir);
+    if (!import_fs6.default.existsSync(this.backupsDir)) return [];
+    const files = import_fs6.default.readdirSync(this.backupsDir);
     const backups = [];
     for (const file of files) {
       if (file.endsWith(".json") && file.startsWith("androbase_backup_")) {
         try {
-          const filePath = path6.join(this.backupsDir, file);
-          const raw = fs6.readFileSync(filePath, "utf8");
+          const filePath = import_path6.default.join(this.backupsDir, file);
+          const raw = import_fs6.default.readFileSync(filePath, "utf8");
           const parsed = JSON.parse(raw);
           if (parsed && parsed.metadata) {
             backups.push(parsed.metadata);
@@ -1300,12 +1316,12 @@ var BackupManager = class {
     return backups.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
   static verifyBackupIntegrity(filename) {
-    const safeTarget = path6.normalize(path6.join(this.backupsDir, path6.basename(filename)));
-    if (!fs6.existsSync(safeTarget)) {
+    const safeTarget = import_path6.default.normalize(import_path6.default.join(this.backupsDir, import_path6.default.basename(filename)));
+    if (!import_fs6.default.existsSync(safeTarget)) {
       return { valid: false, message: "Backup file does not exist." };
     }
     try {
-      const raw = fs6.readFileSync(safeTarget, "utf8");
+      const raw = import_fs6.default.readFileSync(safeTarget, "utf8");
       const parsed = JSON.parse(raw);
       if (!parsed.metadata || !parsed.database || !parsed.database.schemas) {
         return { valid: false, message: "Backup payload structure is malformed or missing tables." };
@@ -1316,17 +1332,17 @@ var BackupManager = class {
     }
   }
   static restoreBackup(filename, performedBy) {
-    const safeTarget = path6.normalize(path6.join(this.backupsDir, path6.basename(filename)));
+    const safeTarget = import_path6.default.normalize(import_path6.default.join(this.backupsDir, import_path6.default.basename(filename)));
     const check = this.verifyBackupIntegrity(filename);
     if (!check.valid) {
       throw new Error(`Cannot restore invalid backup: ${check.message}`);
     }
-    const raw = fs6.readFileSync(safeTarget, "utf8");
+    const raw = import_fs6.default.readFileSync(safeTarget, "utf8");
     const parsed = JSON.parse(raw);
     const rollbackDump = db.getRawDump();
-    const rollbackPath = path6.join(this.backupsDir, `pre_restore_rollback_${Date.now()}.json`);
+    const rollbackPath = import_path6.default.join(this.backupsDir, `pre_restore_rollback_${Date.now()}.json`);
     try {
-      fs6.writeFileSync(rollbackPath, JSON.stringify(rollbackDump, null, 2), { mode: 384 });
+      import_fs6.default.writeFileSync(rollbackPath, JSON.stringify(rollbackDump, null, 2), { mode: 384 });
     } catch (e) {
       console.warn("Could not save pre-restore rollback snapshot:", e);
     }
@@ -1350,8 +1366,8 @@ var BackupManager = class {
     }
   }
   static getBackupFilePath(filename) {
-    const safeTarget = path6.normalize(path6.join(this.backupsDir, path6.basename(filename)));
-    if (!fs6.existsSync(safeTarget)) {
+    const safeTarget = import_path6.default.normalize(import_path6.default.join(this.backupsDir, import_path6.default.basename(filename)));
+    if (!import_fs6.default.existsSync(safeTarget)) {
       throw new Error("Backup file not found.");
     }
     return safeTarget;
@@ -1360,10 +1376,10 @@ var BackupManager = class {
 BackupManager.backupsDir = config.backupsDir;
 
 // src/server/network/manager.ts
-import os2 from "os";
+var import_os2 = __toESM(require("os"));
 var NetworkManager = class {
   static getInterfaces() {
-    const osInterfaces = os2.networkInterfaces();
+    const osInterfaces = import_os2.default.networkInterfaces();
     const result = [];
     Object.entries(osInterfaces).forEach(([name, ifaces]) => {
       if (!ifaces) return;
@@ -1421,11 +1437,11 @@ var NetworkManager = class {
 };
 
 // src/server/api/router.ts
-var upload = multer({
-  storage: multer.memoryStorage(),
+var upload = (0, import_multer.default)({
+  storage: import_multer.default.memoryStorage(),
   limits: { fileSize: config.maxUploadBytes }
 });
-var apiRouter = Router();
+var apiRouter = (0, import_express.Router)();
 var requireAuth = (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -1450,8 +1466,8 @@ var requireAdmin = (req, res, next) => {
   });
 };
 apiRouter.get("/health", (req, res) => {
-  const totalMem = os3.totalmem();
-  const freeMem = os3.freemem();
+  const totalMem = import_os3.default.totalmem();
+  const freeMem = import_os3.default.freemem();
   const cachedReport = CapabilityDetector.getCached();
   res.json({
     status: "healthy",
@@ -1715,7 +1731,7 @@ apiRouter.get("/files/:id/download", requireAuth, (req, res) => {
   const record = FileStorageService.getFileRecord(req.params.id);
   if (!record) return res.status(404).json({ error: "File not found." });
   const filePath = FileStorageService.getFilePath(record);
-  if (!fs7.existsSync(filePath)) {
+  if (!import_fs7.default.existsSync(filePath)) {
     return res.status(404).json({ error: "Physical file missing from storage." });
   }
   res.setHeader("Content-Type", record.mimeType);
@@ -1778,10 +1794,9 @@ apiRouter.get("/network/interfaces", (req, res) => {
 });
 
 // server.ts
-var __filename = fileURLToPath(import.meta.url);
-var __dirname = path7.dirname(__filename);
+var appDir = typeof __dirname !== "undefined" ? __dirname : process.cwd();
 async function startServer() {
-  const app = express();
+  const app = (0, import_express2.default)();
   const PORT = config.port;
   await db.initialize();
   console.log("[AndroBase] Embedded Portable Database initialized.");
@@ -1795,25 +1810,25 @@ async function startServer() {
     res.removeHeader("X-Powered-By");
     next();
   });
-  app.use(express.json({ limit: "10mb" }));
-  app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+  app.use(import_express2.default.json({ limit: "10mb" }));
+  app.use(import_express2.default.urlencoded({ extended: true, limit: "10mb" }));
   app.use("/api/v1", apiRouter);
   app.get("/api/health", (req, res) => res.redirect("/api/v1/health"));
-  const distPath = path7.resolve(__dirname, "dist");
-  const hasDist = fs8.existsSync(path7.join(distPath, "index.html"));
+  const distPath = import_path7.default.resolve(appDir, "dist");
+  const hasDist = import_fs8.default.existsSync(import_path7.default.join(distPath, "index.html"));
   const isProd = process.env.NODE_ENV === "production" || hasDist;
   if (isProd) {
-    if (fs8.existsSync(distPath)) {
-      app.use(express.static(distPath));
+    if (import_fs8.default.existsSync(distPath)) {
+      app.use(import_express2.default.static(distPath));
       app.get("*", (req, res) => {
-        res.sendFile(path7.resolve(distPath, "index.html"));
+        res.sendFile(import_path7.default.resolve(distPath, "index.html"));
       });
     } else {
       console.warn("[AndroBase] Production mode active but dist/ directory not found. Please run `npm run build`.");
     }
   } else {
     try {
-      const { createServer: createViteServer } = await import("vite");
+      const { createServer: createViteServer } = await Promise.resolve().then(() => __toESM(require("vite")));
       const vite = await createViteServer({
         server: { middlewareMode: true },
         appType: "spa"
@@ -1821,10 +1836,10 @@ async function startServer() {
       app.use(vite.middlewares);
     } catch {
       console.warn("[AndroBase] Vite dev middleware not loaded (running without devDependencies). Serving static dist.");
-      if (fs8.existsSync(distPath)) {
-        app.use(express.static(distPath));
+      if (import_fs8.default.existsSync(distPath)) {
+        app.use(import_express2.default.static(distPath));
         app.get("*", (req, res) => {
-          res.sendFile(path7.resolve(distPath, "index.html"));
+          res.sendFile(import_path7.default.resolve(distPath, "index.html"));
         });
       }
     }

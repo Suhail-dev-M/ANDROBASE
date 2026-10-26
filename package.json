@@ -2,16 +2,15 @@
   "name": "react-example",
   "private": true,
   "version": "0.0.0",
-  "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
-    "start": "node server.js",
-    "build": "vite build && esbuild server.ts --bundle --platform=node --format=esm --target=node14 --outfile=server.js --external:express --external:multer --external:dotenv --external:@google/genai --external:vite",
+    "start": "node server.cjs",
+    "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --target=node12 --outfile=server.cjs --external:express --external:multer --external:dotenv --external:@google/genai --external:vite && cp server.cjs server.js",
     "build:client": "vite build",
-    "build:server": "esbuild server.ts --bundle --platform=node --format=esm --target=node14 --outfile=server.js --external:express --external:multer --external:dotenv --external:@google/genai --external:vite",
+    "build:server": "esbuild server.ts --bundle --platform=node --format=cjs --target=node12 --outfile=server.cjs --external:express --external:multer --external:dotenv --external:@google/genai --external:vite && cp server.cjs server.js",
     "preview": "vite preview",
     "test": "tsx test/run-tests.ts",
-    "clean": "rm -rf dist server.js",
+    "clean": "rm -rf dist server.js server.cjs",
     "lint": "tsc --noEmit"
   },
   "dependencies": {

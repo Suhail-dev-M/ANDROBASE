@@ -7,7 +7,6 @@
 import express, { Request, Response, NextFunction } from 'express';
 import path from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
 import { config } from './src/server/config.ts';
 import { db } from './src/server/db/portable-db.ts';
 import { apiRouter } from './src/server/api/router.ts';
@@ -15,8 +14,8 @@ import { CapabilityDetector } from './src/server/detector.ts';
 import { NetworkManager } from './src/server/network/manager.ts';
 import { AuthService } from './src/server/security/auth.ts';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Universal directory resolution compatible with CommonJS bundles and TS loaders
+const appDir = typeof __dirname !== 'undefined' ? __dirname : process.cwd();
 
 async function startServer() {
   const app = express();
@@ -52,7 +51,7 @@ async function startServer() {
   app.get('/api/health', (req, res) => res.redirect('/api/v1/health'));
 
   // 6. Static production serving vs optional Vite middleware in development
-  const distPath = path.resolve(__dirname, 'dist');
+  const distPath = path.resolve(appDir, 'dist');
   const hasDist = fs.existsSync(path.join(distPath, 'index.html'));
   const isProd = process.env.NODE_ENV === 'production' || hasDist;
 

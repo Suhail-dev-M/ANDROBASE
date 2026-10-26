@@ -186,13 +186,24 @@ async function runAllTests() {
     assert.ok(prodDeps.includes('multer'), 'multer must be in production dependencies');
   });
 
-  await test('Compiled production server bundle (server.js) is valid JavaScript', () => {
+  await test('Compiled production server bundles (server.cjs / server.js) use pure CommonJS without raw import statements', () => {
+    const serverCjsPath = path.resolve(process.cwd(), 'server.cjs');
     const serverJsPath = path.resolve(process.cwd(), 'server.js');
+    assert.ok(fs.existsSync(serverCjsPath), 'server.cjs must exist after build');
     assert.ok(fs.existsSync(serverJsPath), 'server.js must exist after build');
-    const content = fs.readFileSync(serverJsPath, 'utf8');
-    // Ensure no raw TypeScript type annotations exist in output
-    assert.strictEqual(content.includes(': Request,'), false, 'server.js must not contain raw TypeScript parameter annotations');
-    assert.ok(content.length > 1000, 'server.js should be a bundled artifact');
+
+    const contentCjs = fs.readFileSync(serverCjsPath, 'utf8');
+    const contentJs = fs.readFileSync(serverJsPath, 'utf8');
+
+    // Regression check: Ensure NO top-level ESM import statement exists (which caused "Cannot use import statement outside a module")
+    assert.strictEqual(/^import\s+express\s+from/m.test(contentCjs), false, 'server.cjs must NOT use ESM import express from');
+    assert.strictEqual(/^import\s+express\s+from/m.test(contentJs), false, 'server.js must NOT use ESM import express from');
+
+    // Verify it uses CommonJS require
+    assert.ok(contentCjs.includes('require("express")') || contentCjs.includes("require('express')"), 'server.cjs must use CommonJS require("express")');
+
+    // Validate that Node.js can check syntax without error
+    execSync('node -c server.cjs', { stdio: 'pipe' });
   });
 
   await test('Service and installer shell scripts pass bash syntax verification', () => {

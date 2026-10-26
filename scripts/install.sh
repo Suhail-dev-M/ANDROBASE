@@ -126,17 +126,19 @@ fi
 # 6. Verify Server Entry Point
 echo ""
 echo "[6/6] Verifying server entry point..."
-if [ -f "$ROOT_DIR/server.js" ]; then
+if [ -f "$ROOT_DIR/server.cjs" ]; then
+  echo "  Found production server bundle: server.cjs (CommonJS ready for all Node versions)"
+elif [ -f "$ROOT_DIR/server.js" ]; then
   echo "  Found production server bundle: server.js (Ready for execution)"
 elif [ -f "$ROOT_DIR/server.ts" ]; then
   if command -v tsx >/dev/null 2>&1 || command -v npx >/dev/null 2>&1; then
     echo "  Found server.ts with TypeScript runtime (Ready for development)"
   else
-    echo "  ⚠️ Warning: 'server.js' not found. If this is a production device, ensure"
+    echo "  ⚠️ Warning: 'server.cjs' / 'server.js' not found. If this is a production device, ensure"
     echo "     the project was built on a PC/CI runner ('npm run build') before deployment."
   fi
 else
-  echo "❌ Error: Neither 'server.js' nor 'server.ts' was found in $ROOT_DIR."
+  echo "❌ Error: No server entry point ('server.cjs', 'server.js', or 'server.ts') was found in $ROOT_DIR."
   exit 1
 fi
 

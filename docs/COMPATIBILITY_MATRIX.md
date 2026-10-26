@@ -34,6 +34,17 @@ This document details hardware architectures, Android operating system versions,
 
 ---
 
+## Node.js Runtimes & Module System Compatibility
+
+| Node.js Runtime Version | Environment Profile | Module System | Supported Features | Status | Notes |
+|:---|:---:|:---:|:---|:---:|:---|
+| **Node.js 18.x – 22.x+** | Profile B / C | CommonJS / ESM | Full platform, WebCrypto CSPRNG, optional GenAI integration, high concurrency | **Implemented and tested** | Standard Termux LTS on Android 7+. |
+| **Node.js 14.x – 16.x** | Profile A / B | CommonJS (`server.cjs`) | Full REST API, embedded database, file storage, LAN dashboard | **Implemented and tested** | Legacy Termux releases on Android 6–7. |
+| **Node.js 12.x (e.g. v12.13.0)** | Profile A (Legacy) | CommonJS (`server.cjs` / `server.js`) | Core REST API, embedded database, file storage, LAN dashboard | **Implemented and tested** | Pre-bundled pure CommonJS bundle without ES module `import` or nullish coalescing `??` syntax. Dev tools (`vite`, `esbuild`) must be run on PC/CI before deployment. |
+| **Node.js < 12.0** | N/A | Incompatible | None | **Unsupported on selected platform** | Lacks standard ES2018 primitives and V8 features required by modern HTTP frameworks. |
+
+---
+
 ## Core Feature Status Matrix
 
 | Feature | Profile A (Legacy) | Profile B (Standard) | Profile C (Advanced) | Status |
