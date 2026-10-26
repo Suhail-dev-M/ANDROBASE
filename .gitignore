@@ -7,8 +7,7 @@ node_modules/
 .pnp
 .pnp.js
 
-# Build and production output
-dist/
+# Build and production output (dist/ is included for phone deployment)
 dist-ssr/
 build/
 coverage/
