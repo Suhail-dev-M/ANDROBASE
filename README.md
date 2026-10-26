@@ -79,8 +79,8 @@ Inside the Termux terminal on your Android device:
 
 ```bash
 pkg update -y && pkg install -y git nodejs-lts
-git clone https://github.com/your-org/androbase.git
-cd androbase
+git clone https://github.com/Suhail-dev-M/ANDROBASE.git
+cd ANDROBASE
 ./scripts/install.sh
 ```
 
