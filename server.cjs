@@ -998,11 +998,16 @@ var _CapabilityDetector = class _CapabilityDetector {
     });
     let wakelockAvailable = false;
     if (isTermux) {
-      try {
-        (0, import_child_process.execSync)("command -v termux-wake-lock", { stdio: "pipe" });
+      const termuxBin = import_path4.default.join(process.env.PREFIX || "/data/data/com.termux/files/usr", "bin", "termux-wake-lock");
+      if (import_fs4.default.existsSync(termuxBin)) {
         wakelockAvailable = true;
-      } catch {
-        wakelockAvailable = false;
+      } else {
+        try {
+          (0, import_child_process.execSync)("command -v termux-wake-lock", { stdio: "ignore", timeout: 1e3 });
+          wakelockAvailable = true;
+        } catch {
+          wakelockAvailable = false;
+        }
       }
     }
     checks.push({

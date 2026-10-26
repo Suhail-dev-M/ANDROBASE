@@ -47,11 +47,17 @@ find_entry_point() {
 
 check_http_health() {
   local health_url="http://127.0.0.1:${PORT}/api/v1/health"
+
+  # Quick native bash socket pre-check (0 CPU overhead)
+  if ! (echo > /dev/tcp/127.0.0.1/${PORT}) 2>/dev/null; then
+    return 1
+  fi
+
   if command -v curl >/dev/null 2>&1; then
     curl -s -f -m 2 "$health_url" >/dev/null 2>&1
     return $?
   else
-    # Fallback to Node built-in http check
+    # Fallback to single Node built-in http check
     node -e "
       const http = require('http');
       const req = http.get('${health_url}', { timeout: 2000 }, (res) => {
@@ -81,7 +87,7 @@ start_service() {
   ENTRY_SPEC=$(find_entry_point)
   if [ -z "$ENTRY_SPEC" ]; then
     echo "❌ Error: No runnable server entry point found."
-    echo "   Neither 'server.js' nor a working TypeScript runner for 'server.ts' was detected."
+    echo "   Neither 'server.cjs' nor 'server.js' was detected."
     echo "   Please compile the server bundle first by running: npm run build"
     exit 1
   fi
@@ -96,6 +102,9 @@ start_service() {
   acquire_wakelock
 
   cd "$ROOT_DIR"
+  START_MARKER="=== ANDROBASE_SESSION_START_$(date +%s) ==="
+  echo "$START_MARKER" >> "$LOG_FILE"
+
   if [ "$RUNNER" = "node" ]; then
     nohup node --max-old-space-size=256 "$ENTRY_FILE" >> "$LOG_FILE" 2>&1 &
   elif [ "$RUNNER" = "tsx" ]; then
@@ -107,18 +116,18 @@ start_service() {
   PID=$!
   echo "$PID" > "$PID_FILE"
 
-  # 3. Verify server startup & health ping (wait up to 6 seconds)
+  # 3. Verify server startup & health ping (wait up to 15-20 seconds for mobile CPU boot)
   echo -n "  Waiting for HTTP server to become healthy on port ${PORT}..."
   HEALTHY=false
 
-  for _ in {1..12}; do
+  for i in {1..20}; do
     # Check if process is still alive
     if ! kill -0 "$PID" 2>/dev/null; then
       echo ""
       echo "❌ Server process terminated unexpectedly during startup!"
-      echo "--- Last 20 lines from $LOG_FILE ---"
-      tail -n 20 "$LOG_FILE" 2>/dev/null || true
-      echo "------------------------------------"
+      echo "--- Output from current run ($LOG_FILE) ---"
+      sed -n "/$START_MARKER/,\$p" "$LOG_FILE" | grep -v "$START_MARKER" || tail -n 20 "$LOG_FILE"
+      echo "-------------------------------------------"
       rm -f "$PID_FILE"
       release_wakelock
       exit 1
@@ -129,7 +138,7 @@ start_service() {
       break
     fi
 
-    sleep 0.5
+    sleep 1
     echo -n "."
   done
   echo ""
@@ -139,10 +148,10 @@ start_service() {
     echo "   Local URL: http://127.0.0.1:${PORT}"
     exit 0
   else
-    echo "❌ Server process is running (PID: $PID) but failed HTTP health check after 6 seconds."
-    echo "--- Last 15 lines from $LOG_FILE ---"
-    tail -n 15 "$LOG_FILE" 2>/dev/null || true
-    echo "------------------------------------"
+    echo "❌ Server process is running (PID: $PID) but failed HTTP health check after 20 seconds."
+    echo "--- Output from current run ($LOG_FILE) ---"
+    sed -n "/$START_MARKER/,\$p" "$LOG_FILE" | grep -v "$START_MARKER" || tail -n 20 "$LOG_FILE"
+    echo "-------------------------------------------"
     stop_service
     exit 1
   fi

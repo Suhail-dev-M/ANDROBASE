@@ -41,13 +41,18 @@ echo "[2/6] Checking runtime dependencies..."
 if ! command -v node >/dev/null 2>&1; then
   echo "  [!] Node.js is not installed."
   if [ "$IS_TERMUX" = true ]; then
-    echo "      Installing Node.js via Termux package manager..."
+    echo "      Installing Node.js and curl via Termux package manager..."
     pkg update -y
-    pkg install -y nodejs-lts
+    pkg install -y nodejs-lts curl git
   else
     echo "  ❌ Error: Node.js runtime not found. Please install Node.js (version 18+ recommended)."
     exit 1
   fi
+fi
+
+if [ "$IS_TERMUX" = true ] && ! command -v curl >/dev/null 2>&1; then
+  echo "  [+] Installing curl for health monitoring..."
+  pkg install -y curl || true
 fi
 
 NODE_VER=$(node -v)

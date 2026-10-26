@@ -181,12 +181,16 @@ export class CapabilityDetector {
     // 7. Background Execution & Android Wakelock Check
     let wakelockAvailable = false;
     if (isTermux) {
-      try {
-        // Test if termux-wake-lock command exists
-        execSync('command -v termux-wake-lock', { stdio: 'pipe' });
+      const termuxBin = path.join(process.env.PREFIX || '/data/data/com.termux/files/usr', 'bin', 'termux-wake-lock');
+      if (fs.existsSync(termuxBin)) {
         wakelockAvailable = true;
-      } catch {
-        wakelockAvailable = false;
+      } else {
+        try {
+          execSync('command -v termux-wake-lock', { stdio: 'ignore', timeout: 1000 });
+          wakelockAvailable = true;
+        } catch {
+          wakelockAvailable = false;
+        }
       }
     }
 
