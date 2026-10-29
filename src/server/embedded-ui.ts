@@ -1,7 +1,7 @@
 /**
  * AndroBase - Open-Source Mobile Server Platform
  * Self-Contained Embedded Web Management Console
- * Ensures the server provides a full GUI dashboard even when dist/ is not pre-compiled on the phone.
+ * Cute, Modern & Production-Quality Fallback GUI for Android Smartphones
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -11,63 +11,299 @@ export function getEmbeddedDashboardHtml(): string {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AndroBase — Mobile Server Console</title>
+  <title>AndroBase — Mobile Cloud Server</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2310b981' stroke-width='2'><rect width='14' height='20' x='5' y='2' rx='2'/><path d='M12 18h.01'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg: #090d16;
-      --card: #111827;
-      --card-border: #1f2937;
-      --text: #f3f4f6;
-      --text-muted: #9ca3af;
-      --accent: #10b981;
-      --accent-hover: #059669;
+      --card: rgba(17, 24, 39, 0.75);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --emerald: #10b981;
+      --emerald-hover: #059669;
       --cyan: #06b6d4;
-      --red: #ef4444;
-      --yellow: #f59e0b;
+      --purple: #a855f7;
+      --amber: #f59e0b;
+      --rose: #f43f5e;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background-color: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
-    header { background: #0b1120; border-bottom: 1px solid var(--card-border); padding: 0.85rem 1.5rem; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 40; }
-    .brand { display: flex; align-items: center; gap: 0.6rem; font-weight: 700; font-size: 1.15rem; color: #fff; letter-spacing: -0.02em; }
-    .brand-icon { width: 28px; height: 28px; background: linear-gradient(135deg, #10b981, #06b6d4); border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
-    .nav-tabs { display: flex; gap: 0.4rem; overflow-x: auto; padding: 0.75rem 1.5rem; background: #0d1526; border-bottom: 1px solid var(--card-border); }
-    .tab-btn { background: transparent; border: none; color: var(--text-muted); padding: 0.45rem 0.85rem; border-radius: 6px; font-weight: 500; font-size: 0.85rem; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
-    .tab-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
-    .tab-btn.active { color: #fff; background: #1e293b; border-bottom: 2px solid var(--accent); }
-    main { max-width: 1200px; width: 100%; margin: 0 auto; padding: 1.5rem; flex: 1; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-    .card { background: var(--card); border: 1px solid var(--card-border); border-radius: 10px; padding: 1.25rem; }
-    .card h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 0.5rem; }
-    .card .val { font-size: 1.5rem; font-weight: 700; color: #fff; }
-    .card .sub { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem; }
-    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; padding: 0.45rem 0.85rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: none; transition: background 0.15s; }
-    .btn-primary { background: var(--accent); color: #fff; }
-    .btn-primary:hover { background: var(--accent-hover); }
-    .btn-secondary { background: #1f2937; color: var(--text); border: 1px solid #374151; }
-    .btn-secondary:hover { background: #374151; }
-    .badge { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.2rem 0.55rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
-    .badge-success { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
-    .badge-warning { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
-    .banner { background: linear-gradient(90deg, rgba(16,185,129,0.1), rgba(6,182,212,0.1)); border: 1px solid rgba(16,185,129,0.3); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: gap; gap: 1rem; }
-    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem; }
-    th { background: #0d1526; padding: 0.65rem 0.85rem; border-bottom: 1px solid var(--card-border); color: var(--text-muted); font-weight: 600; }
-    td { padding: 0.65rem 0.85rem; border-bottom: 1px solid #1a2234; color: var(--text); word-break: break-all; }
-    tr:hover td { background: rgba(255,255,255,0.02); }
-    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 1rem; }
-    .modal-card { background: #111827; border: 1px solid #374151; border-radius: 12px; width: 100%; max-width: 440px; padding: 1.5rem; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5); }
-    .input-group { margin-bottom: 1rem; }
-    .input-group label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 0.35rem; color: var(--text-muted); }
-    .input-group input { width: 100%; background: #0b1120; border: 1px solid #374151; border-radius: 6px; padding: 0.5rem 0.75rem; color: #fff; font-size: 0.9rem; }
-    .input-group input:focus { outline: none; border-color: var(--accent); }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+    }
+    header {
+      background: rgba(11, 17, 32, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--card-border);
+      padding: 0.85rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      font-weight: 800;
+      font-size: 1.15rem;
+      color: #fff;
+      letter-spacing: -0.02em;
+    }
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, rgba(16,185,129,0.2), rgba(6,182,212,0.2));
+      border: 1px solid rgba(16,185,129,0.3);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+    .nav-tabs {
+      display: flex;
+      gap: 0.4rem;
+      overflow-x: auto;
+      padding: 0.75rem 1.5rem;
+      background: rgba(13, 21, 38, 0.6);
+      border-bottom: 1px solid var(--card-border);
+      scrollbar-width: none;
+    }
+    .nav-tabs::-webkit-scrollbar { display: none; }
+    .tab-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      padding: 0.45rem 0.85rem;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .tab-btn:hover {
+      color: #fff;
+      background: rgba(255,255,255,0.05);
+    }
+    .tab-btn.active {
+      color: #34d399;
+      background: rgba(16,185,129,0.12);
+      border-color: rgba(16,185,129,0.3);
+    }
+    main {
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 1.5rem;
+      flex: 1;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .cute-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 16px;
+      padding: 1.25rem;
+      backdrop-filter: blur(8px);
+      box-shadow: 0 4px 20px -2px rgba(0,0,0,0.4);
+      transition: border-color 0.2s;
+    }
+    .cute-card:hover {
+      border-color: rgba(255, 255, 255, 0.14);
+    }
+    .cute-card h3 {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .cute-card .val {
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: #fff;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .cute-card .sub {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 0.35rem;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.5rem 1rem;
+      border-radius: 12px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+    }
+    .btn:active {
+      transform: scale(0.97);
+    }
+    .btn-primary {
+      background: var(--emerald);
+      color: #042f2e;
+      box-shadow: 0 2px 10px rgba(16,185,129,0.25);
+    }
+    .btn-primary:hover {
+      background: #34d399;
+    }
+    .btn-secondary {
+      background: rgba(30, 41, 59, 0.8);
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .btn-secondary:hover {
+      background: rgba(51, 65, 85, 0.9);
+      border-color: rgba(255,255,255,0.2);
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .badge-success {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .badge-warning {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+    .badge-cyan {
+      background: rgba(6, 182, 212, 0.15);
+      color: #22d3ee;
+      border: 1px solid rgba(6, 182, 212, 0.3);
+    }
+    .banner {
+      background: linear-gradient(90deg, rgba(16,185,129,0.12), rgba(6,182,212,0.08));
+      border: 1px solid rgba(16,185,129,0.3);
+      border-radius: 14px;
+      padding: 1.1rem 1.35rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.85rem;
+    }
+    th {
+      background: rgba(13, 21, 38, 0.8);
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--card-border);
+      color: var(--text-muted);
+      font-weight: 700;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      color: var(--text);
+    }
+    tr:hover td {
+      background: rgba(255,255,255,0.03);
+    }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(4, 7, 14, 0.8);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      padding: 1rem;
+    }
+    .modal-card {
+      background: #111827;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 18px;
+      width: 100%;
+      max-width: 440px;
+      padding: 1.75rem;
+      box-shadow: 0 25px 35px -5px rgba(0,0,0,0.6);
+    }
+    .input-group {
+      margin-bottom: 1rem;
+    }
+    .input-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+      color: var(--text-muted);
+    }
+    .input-group input {
+      width: 100%;
+      background: #090d16;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: 0.6rem 0.85rem;
+      color: #fff;
+      font-size: 0.9rem;
+      font-family: inherit;
+      transition: border-color 0.15s;
+    }
+    .input-group input:focus {
+      outline: none;
+      border-color: var(--emerald);
+    }
     .hidden { display: none !important; }
-    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; background: #0b1120; padding: 0.15rem 0.35rem; border-radius: 4px; font-size: 0.8rem; }
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(0, 0, 0, 0.35);
+      padding: 0.2rem 0.4rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      color: #34d399;
+    }
   </style>
 </head>
 <body>
   <header>
     <div class="brand">
-      <div class="brand-icon">📱</div>
+      <div class="brand-icon">🤖</div>
       <span>ANDROBASE</span>
       <span class="badge badge-success" id="hdr-profile">Profile C</span>
     </div>
@@ -79,58 +315,58 @@ export function getEmbeddedDashboardHtml(): string {
   </header>
 
   <nav class="nav-tabs">
-    <button class="tab-btn active" onclick="switchTab('overview')">Overview</button>
-    <button class="tab-btn" onclick="switchTab('database')">Database</button>
-    <button class="tab-btn" onclick="switchTab('storage')">Storage</button>
-    <button class="tab-btn" onclick="switchTab('diagnostics')">Diagnostics</button>
-    <button class="tab-btn" onclick="switchTab('backups')">Backups</button>
-    <button class="tab-btn" onclick="switchTab('api')">API Explorer</button>
+    <button class="tab-btn active" onclick="switchTab('overview')">✨ Overview</button>
+    <button class="tab-btn" onclick="switchTab('database')">📦 Database</button>
+    <button class="tab-btn" onclick="switchTab('storage')">📁 Storage</button>
+    <button class="tab-btn" onclick="switchTab('diagnostics')">⚡ Diagnostics</button>
+    <button class="tab-btn" onclick="switchTab('backups')">🛡️ Backups</button>
+    <button class="tab-btn" onclick="switchTab('api')">💻 API Sandbox</button>
   </nav>
 
   <main>
     <!-- Admin Setup Alert Banner -->
     <div id="bootstrap-banner" class="banner hidden">
       <div>
-        <strong style="color:#10b981;">🔑 Admin Setup Required</strong>
-        <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0.2rem;">This server has no admin configured. Check Termux console or <code>cat ~/.androbase/.bootstrap_token</code> to complete initial setup.</p>
+        <strong style="color:#10b981; font-size:0.95rem;">🔑 Admin Account Setup Required</strong>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0.25rem;">This server has no admin configured. Check Termux console or run <code>cat ~/.androbase/.bootstrap_token</code> to complete initial setup.</p>
       </div>
       <button class="btn btn-primary" onclick="openBootstrapModal()">Set Up Admin</button>
     </div>
 
     <!-- OVERVIEW TAB -->
     <div id="tab-overview">
-      <!-- Quick Admin Setup Callout Card -->
-      <div id="overview-setup-card" class="card hidden" style="border-color:#10b981; background:rgba(16,185,129,0.08); margin-bottom:1.5rem;">
-        <h3 style="color:#10b981; font-size:0.95rem; text-transform:none;">🚀 First Time Setup Required</h3>
-        <p style="font-size:0.85rem; color:#d1d5db; margin-top:0.35rem;">Initialize your administrator account to unlock database tables, file uploads, and system backups.</p>
-        <button class="btn btn-primary" style="margin-top:0.75rem;" onclick="openBootstrapModal()">🔑 Click Here to Set Up Admin</button>
+      <div id="overview-setup-card" class="cute-card hidden" style="border-color:rgba(16,185,129,0.4); background:rgba(16,185,129,0.06); margin-bottom:1.5rem;">
+        <h3 style="color:#34d399; font-size:0.95rem; text-transform:none;">🚀 First-Time Mobile Cloud Setup</h3>
+        <p style="font-size:0.85rem; color:#cbd5e1; margin-top:0.35rem; line-height:1.5;">Initialize your administrator account to unlock database tables, private file storage, and snapshot backups on this smartphone.</p>
+        <button class="btn btn-primary" style="margin-top:0.85rem;" onclick="openBootstrapModal()">🔑 Click Here to Set Up Admin</button>
       </div>
+
       <div class="grid">
-        <div class="card">
+        <div class="cute-card">
           <h3>Server Status</h3>
           <div class="val" style="color:#34d399;" id="stat-status">Healthy</div>
           <div class="sub" id="stat-uptime">Uptime: 0m</div>
         </div>
-        <div class="card">
+        <div class="cute-card">
           <h3>Device Profile</h3>
           <div class="val" style="color:#38bdf8;" id="stat-profile">Profile C</div>
           <div class="sub" id="stat-tier">Android 12+ / 64-bit</div>
         </div>
-        <div class="card">
+        <div class="cute-card">
           <h3>System Memory</h3>
           <div class="val" id="stat-mem">-- / -- MB</div>
           <div class="sub" id="stat-mem-sub">V8 Heap: -- MB</div>
         </div>
-        <div class="card">
+        <div class="cute-card">
           <h3>Active Network</h3>
           <div class="val" id="stat-lan" style="font-size:1.15rem; word-break:break-all;">127.0.0.1:3000</div>
           <div class="sub">LAN Access Enabled</div>
         </div>
       </div>
 
-      <div class="card">
-        <h3 style="margin-bottom:1rem;">Enabled Platform Capabilities</h3>
-        <ul id="capabilities-list" style="list-style:none; display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:0.5rem; font-size:0.85rem;">
+      <div class="cute-card">
+        <h3 style="margin-bottom:1rem; color:#fff;">Enabled Platform Capabilities</h3>
+        <ul id="capabilities-list" style="list-style:none; display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:0.65rem; font-size:0.85rem; color:#cbd5e1;">
           <li>✅ Embedded File-Backed Database (WAL)</li>
           <li>✅ Local REST &amp; Auth Service</li>
           <li>✅ Quota-Bounded Storage Engine</li>
@@ -143,15 +379,15 @@ export function getEmbeddedDashboardHtml(): string {
 
     <!-- DATABASE TAB -->
     <div id="tab-database" class="hidden">
-      <div class="card">
+      <div class="cute-card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-          <h3>Database Tables</h3>
+          <h3 style="color:#fff;">Database Tables</h3>
           <button class="btn btn-primary" onclick="loadTables()">Refresh Tables</button>
         </div>
         <div style="overflow-x:auto;">
           <table>
             <thead><tr><th>Table Name</th><th>Record Count</th><th>Actions</th></tr></thead>
-            <tbody id="tables-tbody"><tr><td colspan="3" style="text-align:center; color:var(--text-muted);">Loading tables...</td></tr></tbody>
+            <tbody id="tables-tbody"><tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:2rem;">Loading tables...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -159,15 +395,15 @@ export function getEmbeddedDashboardHtml(): string {
 
     <!-- STORAGE TAB -->
     <div id="tab-storage" class="hidden">
-      <div class="card">
+      <div class="cute-card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-          <h3>Stored Files &amp; Assets</h3>
+          <h3 style="color:#fff;">Stored Files &amp; Assets</h3>
           <button class="btn btn-primary" onclick="loadFiles()">Refresh Files</button>
         </div>
         <div style="overflow-x:auto;">
           <table>
             <thead><tr><th>File Name</th><th>Size</th><th>Created</th><th>MIME</th><th>Action</th></tr></thead>
-            <tbody id="files-tbody"><tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Loading files...</td></tr></tbody>
+            <tbody id="files-tbody"><tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;">Loading files...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -175,9 +411,9 @@ export function getEmbeddedDashboardHtml(): string {
 
     <!-- DIAGNOSTICS TAB -->
     <div id="tab-diagnostics" class="hidden">
-      <div class="card">
-        <h3 style="margin-bottom:1rem;">Hardware &amp; Environment Inspection</h3>
-        <div id="diagnostics-content" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); gap:1rem;">
+      <div class="cute-card">
+        <h3 style="margin-bottom:1rem; color:#fff;">Hardware &amp; Environment Inspection</h3>
+        <div id="diagnostics-content" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:1rem;">
           <div style="color:var(--text-muted);">Loading diagnostic report...</div>
         </div>
       </div>
@@ -185,15 +421,15 @@ export function getEmbeddedDashboardHtml(): string {
 
     <!-- BACKUPS TAB -->
     <div id="tab-backups" class="hidden">
-      <div class="card">
+      <div class="cute-card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
-          <h3>Database &amp; Data Snapshots</h3>
+          <h3 style="color:#fff;">Database Snapshots</h3>
           <button class="btn btn-primary" onclick="createBackup()">Create Snapshot</button>
         </div>
         <div style="overflow-x:auto;">
           <table>
             <thead><tr><th>Backup ID</th><th>Filename</th><th>Size</th><th>Created</th><th>SHA-256</th></tr></thead>
-            <tbody id="backups-tbody"><tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Loading backups...</td></tr></tbody>
+            <tbody id="backups-tbody"><tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;">Loading backups...</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -201,15 +437,15 @@ export function getEmbeddedDashboardHtml(): string {
 
     <!-- API EXPLORER TAB -->
     <div id="tab-api" class="hidden">
-      <div class="card">
-        <h3 style="margin-bottom:1rem;">Live REST API Explorer</h3>
+      <div class="cute-card">
+        <h3 style="margin-bottom:1rem; color:#fff;">Live REST API Explorer</h3>
         <div style="display:flex; gap:0.5rem; margin-bottom:1rem; flex-wrap:wrap;">
           <button class="btn btn-secondary" onclick="testEndpoint('/api/v1/health')">GET /api/v1/health</button>
           <button class="btn btn-secondary" onclick="testEndpoint('/api/v1/status')">GET /api/v1/status</button>
           <button class="btn btn-secondary" onclick="testEndpoint('/api/v1/capabilities')">GET /api/v1/capabilities</button>
           <button class="btn btn-secondary" onclick="testEndpoint('/api/v1/db/tables')">GET /api/v1/db/tables</button>
         </div>
-        <pre id="api-output" style="background:#0b1120; padding:1rem; border-radius:8px; border:1px solid #1f2937; overflow:auto; max-height:400px; font-size:0.8rem; color:#38bdf8;">Click an endpoint above to run a live query.</pre>
+        <pre id="api-output" style="background:#090d16; padding:1.2rem; border-radius:12px; border:1px solid rgba(255,255,255,0.08); overflow:auto; max-height:400px; font-size:0.8rem; font-family:'JetBrains Mono', monospace; color:#38bdf8;">Click an endpoint above to run a live query.</pre>
       </div>
     </div>
   </main>
@@ -217,8 +453,11 @@ export function getEmbeddedDashboardHtml(): string {
   <!-- Bootstrap Modal -->
   <div id="bootstrap-modal" class="modal-backdrop hidden">
     <div class="modal-card">
-      <h2 style="font-size:1.15rem; margin-bottom:0.5rem;">🔑 Admin Bootstrap Setup</h2>
-      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1rem;">Enter the bootstrap token printed to your Termux console during initial startup.</p>
+      <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem;">
+        <span style="font-size:1.2rem;">🔑</span>
+        <h2 style="font-size:1.15rem; font-weight:700;">Admin Bootstrap Setup</h2>
+      </div>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1.25rem;">Enter the bootstrap token printed to your Termux console during initial startup.</p>
       <form onsubmit="submitBootstrap(event)">
         <div class="input-group">
           <label>Bootstrap Token</label>
@@ -232,7 +471,7 @@ export function getEmbeddedDashboardHtml(): string {
           <label>Admin Password</label>
           <input type="password" id="bs-pass" required placeholder="Min 8 characters" minlength="8" />
         </div>
-        <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1.25rem;">
+        <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1.5rem;">
           <button type="button" class="btn btn-secondary" onclick="closeBootstrapModal()">Cancel</button>
           <button type="submit" class="btn btn-primary">Initialize Admin</button>
         </div>
@@ -243,8 +482,11 @@ export function getEmbeddedDashboardHtml(): string {
   <!-- Login Modal -->
   <div id="login-modal" class="modal-backdrop hidden">
     <div class="modal-card">
-      <h2 style="font-size:1.15rem; margin-bottom:0.5rem;">🔐 Admin Login</h2>
-      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1rem;">Authenticate to manage files, tables, and snapshots.</p>
+      <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem;">
+        <span style="font-size:1.2rem;">🔐</span>
+        <h2 style="font-size:1.15rem; font-weight:700;">Admin Sign In</h2>
+      </div>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1.25rem;">Authenticate to manage files, tables, and snapshots.</p>
       <form onsubmit="submitLogin(event)">
         <div class="input-group">
           <label>Username</label>
@@ -255,11 +497,11 @@ export function getEmbeddedDashboardHtml(): string {
           <input type="password" id="lg-pass" required />
         </div>
         <div style="margin-top:0.85rem; text-align:center;">
-          <a href="javascript:void(0)" onclick="toggleAuthModal(); openBootstrapModal();" style="color:#10b981; font-size:0.8rem; text-decoration:none; font-weight:500;">
+          <a href="javascript:void(0)" onclick="toggleAuthModal(); openBootstrapModal();" style="color:#10b981; font-size:0.8rem; text-decoration:none; font-weight:600;">
             🔑 First time here? Click to set up admin account
           </a>
         </div>
-        <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1.25rem;">
+        <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1.5rem;">
           <button type="button" class="btn btn-secondary" onclick="toggleAuthModal()">Cancel</button>
           <button type="submit" class="btn btn-primary">Sign In</button>
         </div>
@@ -327,7 +569,6 @@ export function getEmbeddedDashboardHtml(): string {
           if (btnSetup) btnSetup.style.display = 'inline-flex';
           if (cardSetup) cardSetup.classList.remove('hidden');
 
-          // Auto open modal on first load if no admin exists yet
           if (!sessionStorage.getItem('androbase_auto_bootstrap_shown')) {
             sessionStorage.setItem('androbase_auto_bootstrap_shown', 'true');
             openBootstrapModal();
@@ -347,12 +588,12 @@ export function getEmbeddedDashboardHtml(): string {
         const d = await api('/api/v1/db/tables');
         const tb = document.getElementById('tables-tbody');
         if (!d.tables || d.tables.length === 0) {
-          tb.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--text-muted);">No tables created yet.</td></tr>';
+          tb.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:2rem;">No tables created yet.</td></tr>';
           return;
         }
         tb.innerHTML = d.tables.map(t => '<tr><td><strong>' + t.name + '</strong></td><td>' + t.recordCount + ' rows</td><td><button class="btn btn-secondary" onclick="viewTable(\\'' + t.name + '\\')">Query Rows</button></td></tr>').join('');
       } catch (e) {
-        document.getElementById('tables-tbody').innerHTML = '<tr><td colspan="3" style="color:#ef4444;">Failed to load tables. Login required.</td></tr>';
+        document.getElementById('tables-tbody').innerHTML = '<tr><td colspan="3" style="color:#ef4444; padding:2rem; text-align:center;">Failed to load tables. Sign in to view database.</td></tr>';
       }
     }
 
@@ -370,12 +611,12 @@ export function getEmbeddedDashboardHtml(): string {
         const d = await api('/api/v1/storage/files');
         const tb = document.getElementById('files-tbody');
         if (!d.files || d.files.length === 0) {
-          tb.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No files uploaded yet.</td></tr>';
+          tb.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;">No files uploaded yet.</td></tr>';
           return;
         }
         tb.innerHTML = d.files.map(f => '<tr><td>' + f.originalName + '</td><td>' + (f.sizeBytes / 1024).toFixed(1) + ' KB</td><td>' + f.uploadedAt.split('T')[0] + '</td><td><code>' + f.mimeType + '</code></td><td><a href="/api/v1/storage/' + f.id + '" target="_blank" class="btn btn-secondary">Download</a></td></tr>').join('');
       } catch (e) {
-        document.getElementById('files-tbody').innerHTML = '<tr><td colspan="5" style="color:#ef4444;">Failed to load files. Login required.</td></tr>';
+        document.getElementById('files-tbody').innerHTML = '<tr><td colspan="5" style="color:#ef4444; padding:2rem; text-align:center;">Failed to load files. Sign in to view storage.</td></tr>';
       }
     }
 
@@ -383,9 +624,9 @@ export function getEmbeddedDashboardHtml(): string {
       try {
         const d = await api('/api/v1/capabilities');
         const c = document.getElementById('diagnostics-content');
-        c.innerHTML = d.checks.map(k => '<div class="card"><h3>' + k.name + '</h3><div style="font-weight:600; font-size:1.05rem; margin-top:0.25rem;">' + k.value + '</div><p style="font-size:0.8rem; color:var(--text-muted); margin-top:0.35rem;">' + k.message + '</p></div>').join('');
+        c.innerHTML = d.checks.map(k => '<div class="cute-card"><h3>' + k.name + '</h3><div style="font-weight:700; font-size:1.05rem; margin-top:0.25rem; font-family:\\'JetBrains Mono\\', monospace;">' + k.value + '</div><p style="font-size:0.8rem; color:var(--text-muted); margin-top:0.35rem; line-height:1.4;">' + k.message + '</p></div>').join('');
       } catch (e) {
-        document.getElementById('diagnostics-content').innerHTML = '<div style="color:#ef4444;">Failed to load diagnostic details.</div>';
+        document.getElementById('diagnostics-content').innerHTML = '<div style="color:#ef4444; padding:1rem;">Failed to load diagnostic details.</div>';
       }
     }
 
@@ -394,19 +635,19 @@ export function getEmbeddedDashboardHtml(): string {
         const d = await api('/api/v1/backups');
         const tb = document.getElementById('backups-tbody');
         if (!d.backups || d.backups.length === 0) {
-          tb.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">No snapshot backups created yet.</td></tr>';
+          tb.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;">No snapshot backups created yet.</td></tr>';
           return;
         }
         tb.innerHTML = d.backups.map(b => '<tr><td><code>' + b.id + '</code></td><td>' + b.filename + '</td><td>' + (b.sizeBytes / 1024).toFixed(1) + ' KB</td><td>' + b.createdAt.split('T')[0] + '</td><td><code>' + b.sha256.substring(0, 16) + '...</code></td></tr>').join('');
       } catch (e) {
-        document.getElementById('backups-tbody').innerHTML = '<tr><td colspan="5" style="color:#ef4444;">Failed to load backups. Login required.</td></tr>';
+        document.getElementById('backups-tbody').innerHTML = '<tr><td colspan="5" style="color:#ef4444; padding:2rem; text-align:center;">Failed to load backups. Sign in to manage snapshots.</td></tr>';
       }
     }
 
     async function createBackup() {
       try {
         const d = await api('/api/v1/backups', { method: 'POST', body: JSON.stringify({ label: 'manual' }) });
-        alert('Snapshot created successfully! File: ' + d.backup.filename);
+        alert('Snapshot created successfully! Archive: ' + d.backup.filename);
         loadBackups();
       } catch (e) {
         alert('Failed to create backup: ' + e.message);

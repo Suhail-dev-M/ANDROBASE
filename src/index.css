@@ -1,1 +1,75 @@
 @import "tailwindcss";
+
+@layer base {
+  * {
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+  
+  body {
+    background-color: #090d16;
+    color: #f1f5f9;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+}
+
+/* Custom Delightful Utilities */
+.cute-card {
+  background: linear-gradient(180deg, #131c2e 0%, #0f172a 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease;
+}
+
+.cute-card:hover {
+  border-color: rgba(16, 185, 129, 0.25);
+  box-shadow: 0 8px 30px -4px rgba(16, 185, 129, 0.08), 0 4px 20px -2px rgba(0, 0, 0, 0.4);
+}
+
+.cute-glow {
+  box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.2);
+}
+
+.cute-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Soft custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* Tabular Numerals utility */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Soft pulse keyframes */
+@keyframes cute-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-3px); }
+}
+
+.animate-cute-float {
+  animation: cute-float 3.5s ease-in-out infinite;
+}

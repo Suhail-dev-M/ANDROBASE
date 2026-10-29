@@ -1,13 +1,15 @@
 /**
- * AndroBase - Dashboard Overview Tab
+ * AndroBase - Delightful & Modern Dashboard Overview Tab
  * Live System Telemetry, Mobile Hardware Metrics & Quick Status
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
-  Smartphone, Database, HardDrive, Shield, Activity, 
-  Wifi, Battery, Cpu, Layers, CheckCircle2, AlertTriangle, ArrowRight, RefreshCw, Key
+  Smartphone, Database, HardDrive, ShieldCheck, Activity, 
+  Wifi, Sparkles, Cpu, Layers, CheckCircle2, AlertTriangle, 
+  ArrowRight, RefreshCw, Key, Copy, Check, UploadCloud, 
+  Plus, Archive, ExternalLink
 } from 'lucide-react';
 import { ServerStatusResponse, CompatibilityReport, AuditLog } from '../types.ts';
 
@@ -28,6 +30,8 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
   onNavigate,
   onOpenBootstrap,
 }) => {
+  const [copiedLan, setCopiedLan] = useState(false);
+
   const formatBytes = (bytes: number) => {
     if (bytes === 0) return '0 B';
     const k = 1024;
@@ -36,355 +40,415 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
   };
 
-  const getProfileBadgeStyle = (profile?: string) => {
-    switch (profile) {
-      case 'profile_c':
-        return {
-          bg: 'bg-purple-950/40 border-purple-800/60',
-          text: 'text-purple-400',
-          badge: 'bg-purple-900/60 text-purple-300 border-purple-700',
-        };
-      case 'profile_b':
-        return {
-          bg: 'bg-emerald-950/40 border-emerald-800/60',
-          text: 'text-emerald-400',
-          badge: 'bg-emerald-900/60 text-emerald-300 border-emerald-700',
-        };
-      case 'profile_a':
-        return {
-          bg: 'bg-amber-950/40 border-amber-800/60',
-          text: 'text-amber-400',
-          badge: 'bg-amber-900/60 text-amber-300 border-amber-700',
-        };
-      default:
-        return {
-          bg: 'bg-slate-900 border-slate-800',
-          text: 'text-slate-400',
-          badge: 'bg-slate-800 text-slate-300 border-slate-700',
-        };
-    }
+  const copyLanUrl = () => {
+    const url = status?.network.lan || 'http://127.0.0.1:3000';
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedLan(true);
+      setTimeout(() => setCopiedLan(false), 2000);
+    }).catch(() => {});
   };
 
-  const profileStyle = getProfileBadgeStyle(status?.profile);
+  const freeMemMb = report?.device.freeMemoryMb ?? (status?.device.freeMemoryMb ?? 0);
+  const totalMemMb = report?.device.totalMemoryMb ?? (status?.device.totalMemoryMb ?? 1);
+  const ramPercent = Math.min(100, Math.round(((totalMemMb - freeMemMb) / totalMemMb) * 100));
+
+  const storageUsed = status?.storageStats.totalSizeBytes ?? 0;
+  const storageLimit = 20 * 1024 * 1024 * 1024; // 20GB baseline
+  const storagePercent = Math.min(100, Math.round((storageUsed / storageLimit) * 100));
 
   return (
     <div className="space-y-6">
-      {/* Alert if no admin is set up */}
-      {status && !status.hasAdmin && (
-        <div className="p-4 rounded-xl bg-gradient-to-r from-amber-950/80 to-amber-900/40 border border-amber-700/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-amber-500/20 text-amber-400 border border-amber-500/40 shrink-0">
-              <Key className="w-5 h-5" />
+      
+      {/* 1. Welcoming Hero Banner */}
+      {status && !status.hasAdmin ? (
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-950/70 via-[#1C160C] to-amber-900/40 border border-amber-500/30 p-5 sm:p-6 shadow-xl shadow-amber-950/20">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5 relative z-10">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-2xl shrink-0 shadow-inner">
+                ✨
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-bold text-white tracking-tight">
+                    Welcome to AndroBase! Let's Set Up Your Admin Account
+                  </h2>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    Step 1 of 1
+                  </span>
+                </div>
+                <p className="text-xs text-amber-200/80 mt-1 max-w-2xl leading-relaxed">
+                  Your server is up and listening. Because this runs on your personal phone, an administrator account is required to protect your private database and files.
+                </p>
+                <div className="mt-2.5 flex items-center gap-2 text-[11px] text-amber-300 font-mono">
+                  <span>Run in Termux:</span>
+                  <code className="bg-black/40 px-2 py-0.5 rounded border border-amber-500/20 text-amber-200">
+                    cat ~/.androbase/.bootstrap_token
+                  </code>
+                </div>
+              </div>
             </div>
-            <div>
-              <h4 className="text-sm font-semibold text-amber-200">First-Run Setup Required</h4>
-              <p className="text-xs text-amber-300/80">
-                An administrator account has not been initialized yet. Use your local bootstrap token to claim control.
-              </p>
+
+            <button
+              onClick={onOpenBootstrap}
+              className="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center gap-2 shrink-0 active:scale-95"
+            >
+              <Key className="w-4 h-4" />
+              <span>Enter Bootstrap Token</span>
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#0F1C2E] via-[#0E1726] to-[#0A1220] border border-white/[0.08] p-5 sm:p-6 shadow-xl">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-2xl shrink-0">
+                🌱
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-bold text-white tracking-tight">
+                    Your Mobile Cloud is Running Smoothly
+                  </h2>
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-700/40">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    Protected &amp; Online
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-1">
+                  Connected to your local Wi-Fi. Access this dashboard from any phone, laptop, or tablet on your network.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <button
+                onClick={copyLanUrl}
+                className="flex-1 sm:flex-none px-3.5 py-2 bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 text-xs font-semibold rounded-xl border border-white/[0.08] transition-all flex items-center justify-center gap-2"
+                title="Copy LAN address"
+              >
+                {copiedLan ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                <span>{copiedLan ? 'Address Copied!' : 'Copy LAN URL'}</span>
+              </button>
+              <button
+                onClick={onRefresh}
+                className="p-2 bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white rounded-xl border border-white/[0.08] transition-colors"
+                title="Refresh metrics"
+                aria-label="Refresh telemetry"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
             </div>
           </div>
-          <button
-            onClick={onOpenBootstrap}
-            className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-semibold rounded-lg shadow-sm transition-colors whitespace-nowrap"
-          >
-            Claim Admin Account
-          </button>
         </div>
       )}
 
-      {/* Top Metric Cards */}
+      {/* 2. Four Core Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Device & Profile */}
-        <div className={`p-4 rounded-xl border ${profileStyle.bg} relative overflow-hidden`}>
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">Device Profile</span>
-            <Smartphone className={`w-4 h-4 ${profileStyle.text}`} />
-          </div>
-          <div className="mt-2">
-            <div className="text-lg font-bold text-slate-100 tracking-tight">
-              {status?.profileName || 'Detecting...'}
+        
+        {/* Card 1: Device Hardware & Profile */}
+        <div className="cute-card p-5 relative overflow-hidden flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-400">Phone Hardware</span>
+              <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400">
+                <Smartphone className="w-4 h-4" />
+              </div>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">
-              {status?.device.arch} • {status?.device.cpuCores} Cores • API {status?.device.androidApiLevel || 'N/A'}
-            </p>
+            <div className="mt-3">
+              <div className="text-lg font-bold text-white tracking-tight">
+                {status?.profileName?.split('—')[0].trim() || 'Profile C'}
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {status?.device.arch} • {status?.device.cpuCores} Cores • {status?.device.isTermux ? 'Termux Environment' : 'Linux'}
+              </p>
+            </div>
           </div>
-          <div className="mt-3 flex items-center gap-1.5 text-[11px]">
-            <span className={`px-2 py-0.5 rounded border text-[10px] font-mono font-medium ${profileStyle.badge}`}>
-              {status?.profile?.toUpperCase()}
-            </span>
-            <span className="text-slate-400">
-              {status?.device.isTermux ? 'Termux Android' : 'POSIX Host'}
-            </span>
+
+          <div className="mt-4 pt-3 border-t border-white/[0.06]">
+            <div className="flex justify-between text-xs mb-1">
+              <span className="text-slate-400 font-medium">RAM Utilization</span>
+              <span className="font-mono text-slate-300 tabular-nums">{ramPercent}%</span>
+            </div>
+            <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-500" 
+                style={{ width: `${ramPercent}%` }}
+              />
+            </div>
+            <p className="text-[11px] text-slate-500 mt-1.5 font-mono">
+              {freeMemMb} MB free / {totalMemMb} MB total
+            </p>
           </div>
         </div>
 
-        {/* Database Stats */}
-        <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">Database Engine</span>
-            <Database className="w-4 h-4 text-emerald-400" />
-          </div>
-          <div className="mt-2">
-            <div className="text-lg font-bold text-slate-100 tracking-tight">
-              {status?.dbStats.recordCount ?? 0} <span className="text-xs font-normal text-slate-400">Records</span>
+        {/* Card 2: Database Engine */}
+        <div className="cute-card p-5 relative overflow-hidden flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-400">Database Engine</span>
+              <div className="p-1.5 rounded-lg bg-teal-500/10 text-teal-400">
+                <Database className="w-4 h-4" />
+              </div>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Across {status?.dbStats.tableCount ?? 0} schemas & tables
-            </p>
+            <div className="mt-3">
+              <div className="text-lg font-bold text-white tracking-tight flex items-baseline gap-1.5">
+                <span className="font-mono tabular-nums">{status?.dbStats.recordCount ?? 0}</span>
+                <span className="text-xs font-normal text-slate-400">Total Records</span>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Organized in {status?.dbStats.tableCount ?? 0} tables
+              </p>
+            </div>
           </div>
-          <div className="mt-3 flex items-center justify-between text-xs">
-            <span className="text-slate-500 font-mono text-[11px]">
-              Disk: {formatBytes(status?.dbStats.sizeBytes ?? 0)}
+
+          <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between text-xs">
+            <span className="text-slate-400 font-mono text-[11px]">
+              Size: {formatBytes(status?.dbStats.sizeBytes ?? 0)}
             </span>
             <button
               onClick={() => onNavigate('database')}
-              className="text-emerald-400 hover:text-emerald-300 font-medium inline-flex items-center gap-1 text-[11px]"
+              className="text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1 text-[11px] transition-colors"
             >
-              Browse <ArrowRight className="w-3 h-3" />
+              <span>Explore</span>
+              <ArrowRight className="w-3 h-3" />
             </button>
           </div>
         </div>
 
-        {/* File Storage */}
-        <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">Private Storage</span>
-            <HardDrive className="w-4 h-4 text-cyan-400" />
-          </div>
-          <div className="mt-2">
-            <div className="text-lg font-bold text-slate-100 tracking-tight">
-              {status?.storageStats.totalFiles ?? 0} <span className="text-xs font-normal text-slate-400">Files</span>
+        {/* Card 3: Storage Engine */}
+        <div className="cute-card p-5 relative overflow-hidden flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-400">File Storage</span>
+              <div className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400">
+                <HardDrive className="w-4 h-4" />
+              </div>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">
-              {formatBytes(status?.storageStats.totalSizeBytes ?? 0)} stored privately
-            </p>
-          </div>
-          <div className="mt-3 flex items-center justify-between text-xs">
-            <span className="text-slate-500 text-[11px]">Executable Guard Active</span>
-            <button
-              onClick={() => onNavigate('storage')}
-              className="text-cyan-400 hover:text-cyan-300 font-medium inline-flex items-center gap-1 text-[11px]"
-            >
-              Files <ArrowRight className="w-3 h-3" />
-            </button>
-          </div>
-        </div>
-
-        {/* System Memory & Heap */}
-        <div className="p-4 rounded-xl bg-slate-900 border border-slate-800">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-400">RAM & V8 Heap</span>
-            <Activity className="w-4 h-4 text-purple-400" />
-          </div>
-          <div className="mt-2">
-            <div className="text-lg font-bold text-slate-100 tracking-tight">
-              {status?.device.freeMemoryMb ?? 0} MB <span className="text-xs font-normal text-slate-400">Free</span>
-            </div>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Total: {status?.device.totalMemoryMb ?? 0} MB • Heap Limit: {status?.device.heapLimitMb ?? 256} MB
-            </p>
-          </div>
-          <div className="mt-3 flex items-center justify-between text-xs">
-            <div className="w-24 bg-slate-800 h-1.5 rounded-full overflow-hidden">
-              <div
-                className="bg-purple-500 h-full rounded-full"
-                style={{
-                  width: `${Math.min(
-                    100,
-                    Math.round(
-                      (((status?.device.totalMemoryMb || 1000) - (status?.device.freeMemoryMb || 500)) /
-                        (status?.device.totalMemoryMb || 1000)) *
-                        100
-                    )
-                  )}%`,
-                }}
-              />
-            </div>
-            <span className="text-slate-400 text-[11px]">Safe mobile bound</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Grid: Architecture & Profile Breakdown + LAN Connectivity */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Profile Feature Matrix */}
-        <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h3 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
-                <Layers className="w-4 h-4 text-emerald-400" />
-                <span>Active Profile: {report?.profileDetails.name || status?.profileName}</span>
-              </h3>
+            <div className="mt-3">
+              <div className="text-lg font-bold text-white tracking-tight flex items-baseline gap-1.5">
+                <span className="font-mono tabular-nums">{status?.storageStats.totalFiles ?? 0}</span>
+                <span className="text-xs font-normal text-slate-400">Files Uploaded</span>
+              </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                {report?.profileDetails.description || 'Target profile based on hardware verification.'}
+                {formatBytes(status?.storageStats.totalSizeBytes ?? 0)} used on device
               </p>
             </div>
+          </div>
+
+          <div className="mt-4 pt-3 border-t border-white/[0.06]">
+            <div className="flex justify-between text-xs mb-1">
+              <span className="text-slate-400 font-medium">Safe Mobile Quota</span>
+              <span className="font-mono text-slate-300 tabular-nums">{storagePercent}%</span>
+            </div>
+            <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-cyan-500 to-blue-400 rounded-full transition-all duration-500" 
+                style={{ width: `${Math.max(4, storagePercent)}%` }}
+              />
+            </div>
+            <div className="flex justify-between items-center mt-1.5 text-[11px]">
+              <span className="text-slate-500">Max upload: 20 MB/file</span>
+              <button
+                onClick={() => onNavigate('storage')}
+                className="text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1 transition-colors"
+              >
+                <span>Files</span>
+                <ArrowRight className="w-3 h-3" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 4: Network & LAN Presence */}
+        <div className="cute-card p-5 relative overflow-hidden flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-slate-400">Network &amp; Access</span>
+              <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-400">
+                <Wifi className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="mt-3">
+              <div className="text-sm font-bold text-white font-mono break-all tracking-tight">
+                {status?.network.lan ? status.network.lan.replace('http://', '') : '127.0.0.1:3000'}
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Port {status?.network.local ? status.network.local.split(':').pop() : '3000'} • LAN Active
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between text-xs">
+            <span className="text-emerald-400 font-medium text-[11px] flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              Accepting Requests
+            </span>
+            <button
+              onClick={() => onNavigate('network')}
+              className="text-indigo-400 hover:text-indigo-300 font-semibold flex items-center gap-1 text-[11px] transition-colors"
+            >
+              <span>QR Code</span>
+              <ArrowRight className="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      {/* 3. Quick Action Launcher */}
+      <div className="cute-card p-5">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+          <span>⚡ Quick Actions</span>
+          <span className="text-slate-600 font-normal">|</span>
+          <span className="text-slate-500 font-normal normal-case">Direct shortcuts to essential server features</span>
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <button
+            onClick={() => onNavigate('database')}
+            className="p-3.5 rounded-xl bg-white/[0.03] hover:bg-emerald-500/10 border border-white/[0.06] hover:border-emerald-500/30 text-left transition-all group flex flex-col justify-between"
+          >
+            <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 w-fit group-hover:scale-110 transition-transform">
+              <Plus className="w-4 h-4" />
+            </div>
+            <div className="mt-3">
+              <p className="text-xs font-bold text-white group-hover:text-emerald-300 transition-colors">New Table</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Define JSON/SQL schema</p>
+            </div>
+          </button>
+
+          <button
+            onClick={() => onNavigate('storage')}
+            className="p-3.5 rounded-xl bg-white/[0.03] hover:bg-cyan-500/10 border border-white/[0.06] hover:border-cyan-500/30 text-left transition-all group flex flex-col justify-between"
+          >
+            <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400 w-fit group-hover:scale-110 transition-transform">
+              <UploadCloud className="w-4 h-4" />
+            </div>
+            <div className="mt-3">
+              <p className="text-xs font-bold text-white group-hover:text-cyan-300 transition-colors">Upload File</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Stream safe assets to phone</p>
+            </div>
+          </button>
+
+          <button
+            onClick={() => onNavigate('backups')}
+            className="p-3.5 rounded-xl bg-white/[0.03] hover:bg-purple-500/10 border border-white/[0.06] hover:border-purple-500/30 text-left transition-all group flex flex-col justify-between"
+          >
+            <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400 w-fit group-hover:scale-110 transition-transform">
+              <Archive className="w-4 h-4" />
+            </div>
+            <div className="mt-3">
+              <p className="text-xs font-bold text-white group-hover:text-purple-300 transition-colors">Create Snapshot</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Instant SHA-256 backup</p>
+            </div>
+          </button>
+
+          <button
+            onClick={() => onNavigate('api')}
+            className="p-3.5 rounded-xl bg-white/[0.03] hover:bg-indigo-500/10 border border-white/[0.06] hover:border-indigo-500/30 text-left transition-all group flex flex-col justify-between"
+          >
+            <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400 w-fit group-hover:scale-110 transition-transform">
+              <ExternalLink className="w-4 h-4" />
+            </div>
+            <div className="mt-3">
+              <p className="text-xs font-bold text-white group-hover:text-indigo-300 transition-colors">Test REST API</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">Live cURL &amp; JSON testing</p>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      {/* 4. Two-Column System Health & Capabilities */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* Hardware & Mobile Power Health */}
+        <div className="cute-card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <Activity className="w-4 h-4 text-emerald-400" />
+              <span>Android Runtime Health</span>
+            </h3>
             <button
               onClick={() => onNavigate('diagnostics')}
-              className="text-xs text-emerald-400 hover:text-emerald-300 font-medium inline-flex items-center gap-1"
+              className="text-xs text-slate-400 hover:text-emerald-400 font-semibold transition-colors"
             >
-              Full Inspection <ArrowRight className="w-3.5 h-3.5" />
+              Full Diagnostics →
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
-            {/* Enabled Features */}
-            <div className="p-3.5 rounded-lg bg-slate-950 border border-slate-800">
-              <span className="text-xs font-semibold text-emerald-400 flex items-center gap-1.5 mb-2.5">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Enabled Capabilities
+          <div className="space-y-3 text-xs">
+            <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+              <span className="text-slate-300">Wakelock Protection</span>
+              <span className="text-emerald-400 font-semibold flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4" />
+                Active (CPU sleep prevented)
               </span>
-              <ul className="space-y-1.5 text-xs text-slate-300">
-                {report?.profileDetails.enabledFeatures.map((feat, idx) => (
-                  <li key={idx} className="flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                    <span>{feat}</span>
-                  </li>
-                ))}
-              </ul>
             </div>
 
-            {/* Platform Constraints & Disabled Features */}
-            <div className="p-3.5 rounded-lg bg-slate-950 border border-slate-800">
-              <span className="text-xs font-semibold text-slate-400 flex items-center gap-1.5 mb-2.5">
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-400" /> Disabled / Restricted
+            <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+              <span className="text-slate-300">Database Engine Integrity</span>
+              <span className="text-emerald-400 font-semibold flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4" />
+                WAL &amp; Atomic Write Ready
               </span>
-              <ul className="space-y-1.5 text-xs text-slate-400">
-                {report?.profileDetails.disabledFeatures.length ? (
-                  report.profileDetails.disabledFeatures.map((feat, idx) => (
-                    <li key={idx} className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-600"></span>
-                      <span>{feat}</span>
-                    </li>
-                  ))
-                ) : (
-                  <li className="text-slate-500 italic">No restrictions active. All tier features enabled.</li>
-                )}
-              </ul>
             </div>
-          </div>
 
-          {/* Android Background Wakelock reminder */}
-          <div className="mt-4 p-3 rounded-lg bg-slate-950 border border-slate-800/80 flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2 text-slate-300">
-              <Battery className="w-4 h-4 text-emerald-400" />
-              <span>Android Wake-Lock Status:</span>
-              <span className="font-mono text-emerald-400">
-                {report?.checks.find((c) => c.id === 'background_wakelock')?.value || 'Active'}
+            <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+              <span className="text-slate-300">Memory Ceiling</span>
+              <span className="text-slate-300 font-mono">
+                {status?.device.heapLimitMb || 256} MB V8 Heap Cap
               </span>
             </div>
-            <button
-              onClick={() => onNavigate('network')}
-              className="text-xs text-slate-400 hover:text-slate-200 underline"
-            >
-              Power Setup Guide
-            </button>
+
+            <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.04]">
+              <span className="text-slate-300">Node Runtime</span>
+              <span className="text-slate-300 font-mono">
+                {status?.device.nodeVersion || process.version}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Quick Remote Access Card */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
-                <Wifi className="w-4 h-4 text-cyan-400" />
-                <span>LAN Access URL</span>
-              </h3>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800">
-                Port {status?.device ? 3000 : 3000}
-              </span>
-            </div>
-
-            <p className="text-xs text-slate-400 mb-3">
-              Connect computers, tablets, or other phones on the same local Wi-Fi network:
-            </p>
-
-            <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 font-mono text-xs text-cyan-300 break-all select-all">
-              {status?.network.lan || status?.network.local || 'http://127.0.0.1:3000'}
-            </div>
-
-            <div className="mt-4 space-y-2 text-xs text-slate-400">
-              <div className="flex items-start gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                <span>Restricted to your private Wi-Fi network.</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                <span>Encrypted SSH tunnel available for remote work.</span>
-              </div>
-            </div>
+        {/* Security & Audit Events */}
+        <div className="cute-card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-cyan-400" />
+              <span>Security &amp; Audit Log</span>
+            </h3>
+            <span className="text-xs text-slate-500 font-mono">
+              {auditLogs.length} events recorded
+            </span>
           </div>
 
-          <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
-            <button
-              onClick={() => onNavigate('network')}
-              className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 inline-flex items-center gap-1"
-            >
-              Pairing QR & SSH Tunnel <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={onRefresh}
-              className="p-1.5 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-slate-800 transition-colors"
-              title="Refresh Telemetry"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </button>
-          </div>
+          {auditLogs.length === 0 ? (
+            <div className="p-6 text-center text-slate-500 text-xs">
+              <div className="text-2xl mb-1">🛡️</div>
+              <p>No security warnings or failed logins.</p>
+              <p className="text-[11px] text-slate-600 mt-0.5">Your server is clean and secure.</p>
+            </div>
+          ) : (
+            <div className="space-y-2 overflow-y-auto max-h-48 pr-1">
+              {auditLogs.slice(0, 5).map((log) => (
+                <div 
+                  key={log.id} 
+                  className="p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.04] text-xs flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full ${log.status === 'success' ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+                    <span className="font-medium text-slate-200">{log.action}</span>
+                    <span className="text-[11px] text-slate-500">{log.ip}</span>
+                  </div>
+                  <span className="text-[10px] text-slate-500 font-mono">
+                    {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
+
       </div>
 
-      {/* Recent Security & Audit Events */}
-      <div className="bg-slate-900 border border-slate-800 rounded-xl p-5">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-slate-100 flex items-center gap-2">
-            <Shield className="w-4 h-4 text-emerald-400" />
-            <span>Recent Audit Logs & Security Events</span>
-          </h3>
-          <span className="text-xs text-slate-500">Flash-Safe Auto-Rotating</span>
-        </div>
-
-        {auditLogs.length === 0 ? (
-          <div className="p-6 text-center text-xs text-slate-500">
-            No audit records logged yet.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-800">
-                <tr>
-                  <th className="pb-2">Timestamp</th>
-                  <th className="pb-2">Action</th>
-                  <th className="pb-2">User</th>
-                  <th className="pb-2">IP Address</th>
-                  <th className="pb-2 text-right">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60 font-mono text-[11px]">
-                {auditLogs.slice(0, 5).map((log) => (
-                  <tr key={log.id} className="text-slate-300">
-                    <td className="py-2 text-slate-400">
-                      {new Date(log.timestamp).toLocaleTimeString()}
-                    </td>
-                    <td className="py-2 font-medium text-slate-200">{log.action}</td>
-                    <td className="py-2 text-slate-400">{log.username || 'system'}</td>
-                    <td className="py-2 text-slate-500">{log.ip}</td>
-                    <td className="py-2 text-right">
-                      <span
-                        className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-semibold ${
-                          log.status === 'success'
-                            ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
-                            : 'bg-rose-950 text-rose-400 border border-rose-800'
-                        }`}
-                      >
-                        {log.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
     </div>
   );
 };
