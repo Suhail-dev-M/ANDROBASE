@@ -496,6 +496,107 @@ apiRouter.get('/storage/files', requireAuth, (req: AuthenticatedRequest, res: Re
   res.json(files);
 });
 
+apiRouter.post('/storage/files', requireAuth, upload.single('file'), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded in form field "file".' });
+    }
+    const { description } = req.body;
+    const stored = await FileStorageService.storeFile({
+      originalName: req.file.originalname,
+      mimeType: req.file.mimetype,
+      buffer: req.file.buffer,
+      user: req.user!,
+      description,
+    });
+    res.status(201).json(stored);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+apiRouter.delete('/storage/files/:id', requireAuth, (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const success = FileStorageService.deleteFile(req.params.id, req.user!);
+    if (!success) return res.status(404).json({ error: 'File not found.' });
+    res.json({ message: 'File deleted.' });
+  } catch (err: any) {
+    res.status(403).json({ error: err.message });
+  }
+});
+
+apiRouter.post('/db/tables', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { name, primaryKey, columns } = req.body;
+    if (!name || !primaryKey || !Array.isArray(columns)) {
+      return res.status(400).json({ error: 'Invalid schema format. name, primaryKey, and columns required.' });
+    }
+    db.createTable({
+      name: name.toLowerCase().replace(/[^a-z0-9_]/g, ''),
+      primaryKey,
+      columns,
+      createdAt: new Date().toISOString(),
+    });
+    res.status(201).json({ message: `Table "${name}" created successfully.` });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+apiRouter.delete('/db/tables/:name', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const tableName = req.params.name;
+    db.dropTable(tableName);
+    res.json({ message: `Table "${tableName}" dropped.` });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+apiRouter.post('/db/records/:table', requireAuth, (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const tableName = req.params.table;
+    const record = req.body;
+    const inserted = db.insert(tableName, record);
+    res.status(201).json(inserted);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+apiRouter.post('/db/:table/records', requireAuth, (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const tableName = req.params.table;
+    const record = req.body;
+    const inserted = db.insert(tableName, record);
+    res.status(201).json(inserted);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+apiRouter.delete('/db/records/:table/:id', requireAuth, (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { table, id } = req.params;
+    const deleted = db.delete(table, id);
+    if (!deleted) return res.status(404).json({ error: 'Record not found.' });
+    res.json({ message: 'Record deleted.' });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+apiRouter.delete('/db/:table/records/:id', requireAuth, (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { table, id } = req.params;
+    const deleted = db.delete(table, id);
+    if (!deleted) return res.status(404).json({ error: 'Record not found.' });
+    res.json({ message: 'Record deleted.' });
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 apiRouter.get('/storage/:id', requireAuth, (req: AuthenticatedRequest, res: Response) => {
   const record = FileStorageService.getFileRecord(req.params.id);
   if (!record) return res.status(404).json({ error: 'File record not found.' });

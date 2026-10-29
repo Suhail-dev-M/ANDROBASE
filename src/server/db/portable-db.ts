@@ -385,15 +385,24 @@ export class PortableDatabase {
       newRecord[pk] = generateUUID();
     }
 
-    // Check unique constraints
+    // Check constraints and fill default values
     const table = this.payload.tables[tableName];
     for (const col of schema.columns) {
+      if (newRecord[col.name] === undefined || newRecord[col.name] === null) {
+        if (col.default !== undefined) {
+          newRecord[col.name] = col.default;
+        } else if (col.type === 'date' && (col.name === 'created_at' || col.name === 'updated_at' || col.name === 'timestamp' || col.name === 'appliedAt')) {
+          newRecord[col.name] = new Date().toISOString();
+        }
+      }
+
       if (col.unique && newRecord[col.name] !== undefined) {
         const exists = table.some((row: any) => row[col.name] === newRecord[col.name]);
         if (exists) {
           throw new Error(`Unique constraint failed for field "${col.name}" with value "${newRecord[col.name]}"`);
         }
       }
+
       if (col.required && (newRecord[col.name] === undefined || newRecord[col.name] === null)) {
         throw new Error(`Field "${col.name}" is required on table "${tableName}".`);
       }

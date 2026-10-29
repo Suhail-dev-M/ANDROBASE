@@ -391,6 +391,13 @@ var PortableDatabase = class {
     }
     const table = this.payload.tables[tableName];
     for (const col of schema.columns) {
+      if (newRecord[col.name] === void 0 || newRecord[col.name] === null) {
+        if (col.default !== void 0) {
+          newRecord[col.name] = col.default;
+        } else if (col.type === "date" && (col.name === "created_at" || col.name === "updated_at" || col.name === "timestamp" || col.name === "appliedAt")) {
+          newRecord[col.name] = (/* @__PURE__ */ new Date()).toISOString();
+        }
+      }
       if (col.unique && newRecord[col.name] !== void 0) {
         const exists = table.some((row) => row[col.name] === newRecord[col.name]);
         if (exists) {
@@ -1847,6 +1854,99 @@ apiRouter.get("/storage/files", requireAuth, (req, res) => {
   const files = FileStorageService.listFiles(req.user);
   res.json(files);
 });
+apiRouter.post("/storage/files", requireAuth, upload.single("file"), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded in form field "file".' });
+    }
+    const { description } = req.body;
+    const stored = await FileStorageService.storeFile({
+      originalName: req.file.originalname,
+      mimeType: req.file.mimetype,
+      buffer: req.file.buffer,
+      user: req.user,
+      description
+    });
+    res.status(201).json(stored);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+apiRouter.delete("/storage/files/:id", requireAuth, (req, res) => {
+  try {
+    const success = FileStorageService.deleteFile(req.params.id, req.user);
+    if (!success) return res.status(404).json({ error: "File not found." });
+    res.json({ message: "File deleted." });
+  } catch (err) {
+    res.status(403).json({ error: err.message });
+  }
+});
+apiRouter.post("/db/tables", requireAdmin, (req, res) => {
+  try {
+    const { name, primaryKey, columns } = req.body;
+    if (!name || !primaryKey || !Array.isArray(columns)) {
+      return res.status(400).json({ error: "Invalid schema format. name, primaryKey, and columns required." });
+    }
+    db.createTable({
+      name: name.toLowerCase().replace(/[^a-z0-9_]/g, ""),
+      primaryKey,
+      columns,
+      createdAt: (/* @__PURE__ */ new Date()).toISOString()
+    });
+    res.status(201).json({ message: `Table "${name}" created successfully.` });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+apiRouter.delete("/db/tables/:name", requireAdmin, (req, res) => {
+  try {
+    const tableName = req.params.name;
+    db.dropTable(tableName);
+    res.json({ message: `Table "${tableName}" dropped.` });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+apiRouter.post("/db/records/:table", requireAuth, (req, res) => {
+  try {
+    const tableName = req.params.table;
+    const record = req.body;
+    const inserted = db.insert(tableName, record);
+    res.status(201).json(inserted);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+apiRouter.post("/db/:table/records", requireAuth, (req, res) => {
+  try {
+    const tableName = req.params.table;
+    const record = req.body;
+    const inserted = db.insert(tableName, record);
+    res.status(201).json(inserted);
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+apiRouter.delete("/db/records/:table/:id", requireAuth, (req, res) => {
+  try {
+    const { table, id } = req.params;
+    const deleted = db.delete(table, id);
+    if (!deleted) return res.status(404).json({ error: "Record not found." });
+    res.json({ message: "Record deleted." });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+apiRouter.delete("/db/:table/records/:id", requireAuth, (req, res) => {
+  try {
+    const { table, id } = req.params;
+    const deleted = db.delete(table, id);
+    if (!deleted) return res.status(404).json({ error: "Record not found." });
+    res.json({ message: "Record deleted." });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
 apiRouter.get("/storage/:id", requireAuth, (req, res) => {
   const record = FileStorageService.getFileRecord(req.params.id);
   if (!record) return res.status(404).json({ error: "File record not found." });
@@ -2248,9 +2348,13 @@ function getEmbeddedDashboardHtml() {
     <!-- DATABASE TAB -->
     <div id="tab-database" class="hidden">
       <div class="cute-card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem;">
           <h3 style="color:#fff;">Database Tables</h3>
-          <button class="btn btn-primary" onclick="loadTables()">Refresh Tables</button>
+          <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+            <button class="btn btn-secondary" onclick="openCreateTableModal()">\u{1F6E0}\uFE0F New Table</button>
+            <button class="btn btn-primary" onclick="openInsertRowModal()">\u2795 Insert Row</button>
+            <button class="btn btn-secondary" onclick="loadTables()">\u{1F504} Refresh</button>
+          </div>
         </div>
         <div style="overflow-x:auto;">
           <table>
@@ -2263,10 +2367,20 @@ function getEmbeddedDashboardHtml() {
 
     <!-- STORAGE TAB -->
     <div id="tab-storage" class="hidden">
+      <!-- File Upload Card -->
+      <div class="cute-card" style="margin-bottom:1.25rem;">
+        <h3 style="color:#fff; margin-bottom:0.75rem;">\u{1F4E4} Upload File to Smartphone</h3>
+        <form onsubmit="submitFileUpload(event)" style="display:flex; flex-wrap:wrap; gap:0.75rem; align-items:center;">
+          <input type="file" id="file-picker" required style="background:#090d16; border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:0.45rem; color:#fff; font-size:0.85rem;" />
+          <input type="text" id="file-desc" placeholder="File description (optional)..." style="flex:1; min-width:180px; background:#090d16; border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:0.55rem 0.85rem; color:#fff; font-size:0.85rem;" />
+          <button type="submit" class="btn btn-primary" id="btn-upload">Upload File</button>
+        </form>
+      </div>
+
       <div class="cute-card">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
           <h3 style="color:#fff;">Stored Files &amp; Assets</h3>
-          <button class="btn btn-primary" onclick="loadFiles()">Refresh Files</button>
+          <button class="btn btn-secondary" onclick="loadFiles()">Refresh Files</button>
         </div>
         <div style="overflow-x:auto;">
           <table>
@@ -2377,6 +2491,80 @@ function getEmbeddedDashboardHtml() {
     </div>
   </div>
 
+  <!-- Insert Row Modal -->
+  <div id="insert-row-modal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem;">
+        <span style="font-size:1.2rem;">\u2795</span>
+        <h2 style="font-size:1.15rem; font-weight:700;">Insert Table Record</h2>
+      </div>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1.25rem;">Insert a new JSON row record into your portable database.</p>
+      <form onsubmit="submitInsertRow(event)">
+        <div class="input-group">
+          <label>Target Table</label>
+          <select id="ins-table-select" style="width:100%; background:#090d16; border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:0.6rem 0.85rem; color:#fff; font-size:0.9rem;"></select>
+        </div>
+        <div class="input-group">
+          <label>Record Data (JSON)</label>
+          <textarea id="ins-record-json" rows="6" required style="width:100%; background:#090d16; border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:0.6rem 0.85rem; color:#34d399; font-family:'JetBrains Mono',monospace; font-size:0.85rem;"></textarea>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1.5rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeInsertRowModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Record</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Create Table Modal -->
+  <div id="create-table-modal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.35rem;">
+        <span style="font-size:1.2rem;">\u{1F6E0}\uFE0F</span>
+        <h2 style="font-size:1.15rem; font-weight:700;">Create Custom Table</h2>
+      </div>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1.25rem;">Define a new relational schema on your smartphone.</p>
+      <form onsubmit="submitCreateTable(event)">
+        <div class="input-group">
+          <label>Table Name</label>
+          <input type="text" id="new-tbl-name" required placeholder="e.g. tasks, customers, inventory" />
+        </div>
+        <div class="input-group">
+          <label>Primary Key Column</label>
+          <input type="text" id="new-tbl-pk" required value="id" />
+        </div>
+        <div class="input-group">
+          <label>Columns (JSON Array: name, type)</label>
+          <textarea id="new-tbl-cols" rows="5" required style="width:100%; background:#090d16; border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:0.6rem 0.85rem; color:#38bdf8; font-family:'JetBrains Mono',monospace; font-size:0.85rem;">[
+  { "name": "title", "type": "string", "required": true },
+  { "name": "status", "type": "string" },
+  { "name": "created_at", "type": "date" }
+]</textarea>
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1.5rem;">
+          <button type="button" class="btn btn-secondary" onclick="closeCreateTableModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Create Table</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- View Rows Modal -->
+  <div id="view-rows-modal" class="modal-backdrop hidden">
+    <div class="modal-card" style="max-width:760px; max-height:85vh; display:flex; flex-direction:column;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <div>
+          <h2 style="font-size:1.15rem; font-weight:700;" id="vr-title">Table Records</h2>
+          <p style="font-size:0.8rem; color:var(--text-muted);" id="vr-subtitle">Showing records</p>
+        </div>
+        <button class="btn btn-secondary" onclick="closeViewRowsModal()">Close</button>
+      </div>
+      <div style="overflow:auto; flex:1;" id="vr-content">
+        <p style="color:var(--text-muted);">Loading rows...</p>
+      </div>
+    </div>
+  </div>
+
   <script>
     let authToken = localStorage.getItem('androbase_auth_token') || localStorage.getItem('androbase_jwt') || '';
     let currentUser = null;
@@ -2463,27 +2651,239 @@ function getEmbeddedDashboardHtml() {
       }
     }
 
+    let currentViewingTable = '';
+
     async function loadTables() {
       try {
         const d = await api('/api/v1/db/tables');
         const list = Array.isArray(d) ? d : (d.tables || d.data || []);
         const tb = document.getElementById('tables-tbody');
+        const sel = document.getElementById('ins-table-select');
+        if (sel) {
+          sel.innerHTML = list.map(t => '<option value="' + t.name + '">' + t.name + '</option>').join('');
+        }
+
         if (list.length === 0) {
           tb.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:2rem;">No tables created yet.</td></tr>';
           return;
         }
-        tb.innerHTML = list.map(t => '<tr><td><strong>' + t.name + '</strong></td><td>' + (t.rowCount != null ? t.rowCount : (t.recordCount || 0)) + ' rows</td><td><button class="btn btn-secondary" onclick="viewTable(\\'' + t.name + '\\')">Query Rows</button></td></tr>').join('');
+        tb.innerHTML = list.map(t => '<tr><td><strong>' + t.name + '</strong></td><td>' + (t.rowCount != null ? t.rowCount : (t.recordCount || 0)) + ' rows</td><td><div style="display:flex; gap:0.4rem; align-items:center;"><button class="btn btn-secondary" onclick="viewTable(\\'' + t.name + '\\')">Query Rows</button><button class="btn btn-primary" style="padding:0.35rem 0.65rem; font-size:0.75rem;" onclick="openInsertRowModal(\\'' + t.name + '\\')">\u2795 Add Row</button>' + (t.name.startsWith('_') ? '' : '<button class="btn btn-secondary" style="color:#f43f5e; padding:0.35rem 0.65rem; font-size:0.75rem;" onclick="dropTable(\\'' + t.name + '\\')">\u{1F5D1}\uFE0F</button>') + '</div></td></tr>').join('');
       } catch (e) {
         document.getElementById('tables-tbody').innerHTML = '<tr><td colspan="3" style="color:#ef4444; padding:2rem; text-align:center;">Failed to load tables. Sign in to view database.</td></tr>';
       }
     }
 
     async function viewTable(name) {
+      currentViewingTable = name;
+      document.getElementById('view-rows-modal').classList.remove('hidden');
+      document.getElementById('vr-title').textContent = 'Table: ' + name;
+      document.getElementById('vr-subtitle').textContent = 'Loading records...';
+      const c = document.getElementById('vr-content');
+      c.innerHTML = '<p style="color:var(--text-muted); padding:1rem;">Fetching records from mobile database...</p>';
+
       try {
-        const d = await api('/api/v1/db/' + name + '/query', { method: 'POST', body: JSON.stringify({ limit: 10 }) });
-        alert('Table ' + name + ' (' + (d.total || (d.records && d.records.length) || 0) + ' total records):\\n' + JSON.stringify(d.records || d.data || d, null, 2));
+        const d = await api('/api/v1/db/' + name + '/query', { method: 'POST', body: JSON.stringify({ limit: 50 }) });
+        const records = d.records || d.data || (Array.isArray(d) ? d : []);
+        const total = d.total != null ? d.total : records.length;
+        document.getElementById('vr-subtitle').textContent = 'Showing ' + records.length + ' of ' + total + ' records';
+
+        if (records.length === 0) {
+          c.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--text-muted);"><p>No records in table "' + name + '".</p><button class="btn btn-primary" style="margin-top:0.75rem;" onclick="closeViewRowsModal(); openInsertRowModal(\\'' + name + '\\');">\u2795 Insert First Record</button></div>';
+          return;
+        }
+
+        const keys = Object.keys(records[0]);
+        let html = '<div style="overflow-x:auto;"><table><thead><tr>';
+        keys.forEach(k => { html += '<th>' + k + '</th>'; });
+        html += '<th style="text-align:right;">Actions</th></tr></thead><tbody>';
+        records.forEach(r => {
+          html += '<tr>';
+          keys.forEach(k => {
+            const val = typeof r[k] === 'object' ? JSON.stringify(r[k]) : String(r[k] != null ? r[k] : '');
+            html += '<td style="font-family:monospace; font-size:0.8rem; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="' + val.replace(/"/g, '&quot;') + '">' + val + '</td>';
+          });
+          const id = r.id || r._id || r[keys[0]];
+          html += '<td style="text-align:right;"><button class="btn btn-secondary" style="color:#f43f5e; padding:0.25rem 0.5rem; font-size:0.75rem;" onclick="deleteRow(\\'' + name + '\\', \\'' + id + '\\')">Delete</button></td>';
+          html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+        c.innerHTML = html;
       } catch (e) {
-        alert('Error querying table: ' + e.message);
+        c.innerHTML = '<div style="color:#ef4444; padding:1rem;">Error querying table: ' + e.message + '</div>';
+      }
+    }
+
+    function closeViewRowsModal() {
+      document.getElementById('view-rows-modal').classList.add('hidden');
+    }
+
+    async function deleteRow(tableName, id) {
+      if (!confirm('Are you sure you want to delete this row?')) return;
+      try {
+        await api('/api/v1/db/records/' + tableName + '/' + id, { method: 'DELETE' });
+        viewTable(tableName);
+        loadTables();
+      } catch (e) {
+        alert('Failed to delete row: ' + e.message);
+      }
+    }
+
+    function openInsertRowModal(tableName) {
+      document.getElementById('insert-row-modal').classList.remove('hidden');
+      if (tableName) {
+        const sel = document.getElementById('ins-table-select');
+        if (sel) sel.value = tableName;
+      }
+      const t = document.getElementById('ins-table-select').value;
+      if (t === 'notes') {
+        document.getElementById('ins-record-json').value = JSON.stringify({
+          title: "My Note on Phone",
+          content: "Stored on Android smartphone via AndroBase!",
+          tags: ["android", "mobile", "database"]
+        }, null, 2);
+      } else if (t === 'sensor_telemetry') {
+        document.getElementById('ins-record-json').value = JSON.stringify({
+          device_id: "phone_01",
+          battery_pct: 88,
+          temperature_c: 28.5,
+          network_type: "wifi"
+        }, null, 2);
+      } else {
+        document.getElementById('ins-record-json').value = JSON.stringify({
+          title: "Sample entry",
+          data: "Value"
+        }, null, 2);
+      }
+    }
+
+    function closeInsertRowModal() {
+      document.getElementById('insert-row-modal').classList.add('hidden');
+    }
+
+    async function submitInsertRow(e) {
+      e.preventDefault();
+      const tableName = document.getElementById('ins-table-select').value;
+      const rawJson = document.getElementById('ins-record-json').value;
+      let record;
+      try {
+        record = JSON.parse(rawJson);
+      } catch (err) {
+        alert('Invalid JSON: ' + err.message);
+        return;
+      }
+
+      try {
+        const res = await api('/api/v1/db/records/' + tableName, {
+          method: 'POST',
+          body: JSON.stringify(record)
+        });
+        alert('Record inserted successfully into table "' + tableName + '"!');
+        closeInsertRowModal();
+        loadTables();
+        if (currentViewingTable === tableName) {
+          viewTable(tableName);
+        }
+      } catch (err) {
+        alert('Failed to insert record: ' + err.message);
+      }
+    }
+
+    function openCreateTableModal() {
+      document.getElementById('create-table-modal').classList.remove('hidden');
+    }
+
+    function closeCreateTableModal() {
+      document.getElementById('create-table-modal').classList.add('hidden');
+    }
+
+    async function submitCreateTable(e) {
+      e.preventDefault();
+      const name = document.getElementById('new-tbl-name').value.trim();
+      const primaryKey = document.getElementById('new-tbl-pk').value.trim() || 'id';
+      let columns;
+      try {
+        columns = JSON.parse(document.getElementById('new-tbl-cols').value);
+      } catch (err) {
+        alert('Invalid Columns JSON: ' + err.message);
+        return;
+      }
+
+      try {
+        const res = await api('/api/v1/db/tables', {
+          method: 'POST',
+          body: JSON.stringify({ name, primaryKey, columns })
+        });
+        alert('Table "' + name + '" created successfully!');
+        closeCreateTableModal();
+        loadTables();
+      } catch (err) {
+        alert('Failed to create table: ' + err.message);
+      }
+    }
+
+    async function dropTable(name) {
+      if (!confirm('Are you sure you want to drop table "' + name + '" and delete all records?')) return;
+      try {
+        await api('/api/v1/db/tables/' + name, { method: 'DELETE' });
+        alert('Table "' + name + '" dropped.');
+        loadTables();
+      } catch (err) {
+        alert('Failed to drop table: ' + err.message);
+      }
+    }
+
+    async function submitFileUpload(e) {
+      e.preventDefault();
+      const picker = document.getElementById('file-picker');
+      const desc = document.getElementById('file-desc').value;
+      const btn = document.getElementById('btn-upload');
+
+      if (!picker.files || !picker.files[0]) {
+        alert('Please choose a file to upload.');
+        return;
+      }
+
+      const file = picker.files[0];
+      const formData = new FormData();
+      formData.append('file', file);
+      if (desc) formData.append('description', desc);
+
+      btn.disabled = true;
+      btn.textContent = 'Uploading...';
+
+      try {
+        const headers = {};
+        if (authToken) headers['Authorization'] = 'Bearer ' + authToken;
+        const res = await fetch('/api/v1/storage/files', {
+          method: 'POST',
+          headers,
+          body: formData
+        });
+        const data = await res.json();
+        if (res.ok) {
+          alert('File "' + file.name + '" uploaded successfully!');
+          picker.value = '';
+          document.getElementById('file-desc').value = '';
+          loadFiles();
+        } else {
+          alert('Upload failed: ' + (data.error || 'Server error'));
+        }
+      } catch (err) {
+        alert('Upload request failed: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Upload File';
+      }
+    }
+
+    async function deleteFile(id, name) {
+      if (!confirm('Are you sure you want to delete file "' + name + '"?')) return;
+      try {
+        await api('/api/v1/storage/files/' + id, { method: 'DELETE' });
+        alert('File deleted.');
+        loadFiles();
+      } catch (err) {
+        alert('Failed to delete file: ' + err.message);
       }
     }
 
@@ -2496,7 +2896,7 @@ function getEmbeddedDashboardHtml() {
           tb.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;">No files uploaded yet.</td></tr>';
           return;
         }
-        tb.innerHTML = list.map(f => '<tr><td>' + (f.originalName || f.name) + '</td><td>' + ((f.sizeBytes || 0) / 1024).toFixed(1) + ' KB</td><td>' + (f.uploadedAt || f.createdAt || '').split('T')[0] + '</td><td><code>' + (f.mimeType || 'unknown') + '</code></td><td><a href="/api/v1/storage/' + f.id + '" target="_blank" class="btn btn-secondary">Download</a></td></tr>').join('');
+        tb.innerHTML = list.map(f => '<tr><td>' + (f.originalName || f.name) + '</td><td>' + ((f.sizeBytes || 0) / 1024).toFixed(1) + ' KB</td><td>' + (f.uploadedAt || f.createdAt || '').split('T')[0] + '</td><td><code>' + (f.mimeType || 'unknown') + '</code></td><td><div style="display:flex; gap:0.4rem; align-items:center;"><a href="/api/v1/storage/' + f.id + '" target="_blank" class="btn btn-secondary" style="padding:0.35rem 0.65rem; font-size:0.75rem;">Download</a><button class="btn btn-secondary" style="color:#f43f5e; padding:0.35rem 0.65rem; font-size:0.75rem;" onclick="deleteFile(\\'' + f.id + '\\', \\'' + (f.originalName || f.name) + '\\')">\u{1F5D1}\uFE0F</button></div></td></tr>').join('');
       } catch (e) {
         document.getElementById('files-tbody').innerHTML = '<tr><td colspan="5" style="color:#ef4444; padding:2rem; text-align:center;">Failed to load files. Sign in to view storage.</td></tr>';
       }
