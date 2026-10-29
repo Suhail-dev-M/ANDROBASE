@@ -153,7 +153,17 @@ apiRouter.post('/auth/bootstrap', async (req: Request, res: Response) => {
 
 apiRouter.post('/auth/login', async (req: Request, res: Response) => {
   try {
-    const { identifier, password } = req.body;
+    const rawId = req.body.identifier || req.body.username || req.body.email || req.body.user;
+    const identifier = typeof rawId === 'string' ? rawId.trim() : '';
+    const password = req.body.password;
+
+    if (!AuthService.hasAdmin()) {
+      return res.status(400).json({
+        error: 'No administrator account configured yet. Please complete initial admin setup first using the Set Up Admin button.',
+        needsBootstrap: true,
+      });
+    }
+
     if (!identifier || !password) {
       return res.status(400).json({ error: 'Username/Email and password are required.' });
     }
@@ -449,4 +459,65 @@ apiRouter.get('/network/interfaces', (req: Request, res: Response) => {
   const urls = NetworkManager.getAccessUrls();
   const sshGuide = NetworkManager.getSshTunnelCommand();
   res.json({ interfaces: ifaces, urls, sshGuide });
+});
+
+// ----------------------------------------------------
+// 8. REST Route Aliases (Ensures all UI clients & scripts connect cleanly)
+// ----------------------------------------------------
+apiRouter.get('/db/tables', requireAuth, (req: AuthenticatedRequest, res: Response) => {
+  const tableNames = db.getTableNames();
+  const tables = tableNames.map((name) => ({
+    name,
+    schema: db.getSchema(name),
+    rowCount: db.query(name, { limit: 1 }).total,
+  }));
+  res.json(tables);
+});
+
+apiRouter.post('/db/:table/query', requireAuth, (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const tableName = req.params.table;
+    const { filters, sortField, sortDirection, limit, offset } = req.body;
+    const result = db.query(tableName, {
+      filters,
+      sortField,
+      sortDirection,
+      limit: limit ? parseInt(limit, 10) : 50,
+      offset: offset ? parseInt(offset, 10) : 0,
+    });
+    res.json(result);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+apiRouter.get('/storage/files', requireAuth, (req: AuthenticatedRequest, res: Response) => {
+  const files = FileStorageService.listFiles(req.user);
+  res.json(files);
+});
+
+apiRouter.get('/storage/:id', requireAuth, (req: AuthenticatedRequest, res: Response) => {
+  const record = FileStorageService.getFileRecord(req.params.id);
+  if (!record) return res.status(404).json({ error: 'File record not found.' });
+  const filePath = FileStorageService.getFilePath(record);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: 'Physical file missing from storage.' });
+  }
+  res.setHeader('Content-Type', record.mimeType);
+  res.setHeader('Content-Disposition', `attachment; filename="${record.originalName}"`);
+  res.sendFile(filePath);
+});
+
+apiRouter.get('/backups', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
+  const backups = BackupManager.listBackups();
+  res.json(backups);
+});
+
+apiRouter.post('/backups', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const backup = await BackupManager.createBackup(req.user?.username || 'admin');
+    res.status(201).json(backup);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
 });

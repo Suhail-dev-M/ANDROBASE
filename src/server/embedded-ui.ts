@@ -510,7 +510,7 @@ export function getEmbeddedDashboardHtml(): string {
   </div>
 
   <script>
-    let authToken = localStorage.getItem('androbase_jwt') || '';
+    let authToken = localStorage.getItem('androbase_auth_token') || localStorage.getItem('androbase_jwt') || '';
     let currentUser = null;
 
     function getHeaders() {
@@ -578,6 +578,18 @@ export function getEmbeddedDashboardHtml(): string {
           if (btnSetup) btnSetup.style.display = 'none';
           if (cardSetup) cardSetup.classList.add('hidden');
         }
+
+        const userRaw = localStorage.getItem('androbase_auth_user');
+        if (authToken) {
+          document.getElementById('btn-auth-action').textContent = 'Logout';
+          if (userRaw) {
+            try {
+              const u = JSON.parse(userRaw);
+              document.getElementById('user-display').style.display = 'inline-flex';
+              document.getElementById('user-display').textContent = u.username;
+            } catch(e) {}
+          }
+        }
       } catch (e) {
         console.error('Failed to load status', e);
       }
@@ -586,12 +598,13 @@ export function getEmbeddedDashboardHtml(): string {
     async function loadTables() {
       try {
         const d = await api('/api/v1/db/tables');
+        const list = Array.isArray(d) ? d : (d.tables || d.data || []);
         const tb = document.getElementById('tables-tbody');
-        if (!d.tables || d.tables.length === 0) {
+        if (list.length === 0) {
           tb.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:2rem;">No tables created yet.</td></tr>';
           return;
         }
-        tb.innerHTML = d.tables.map(t => '<tr><td><strong>' + t.name + '</strong></td><td>' + t.recordCount + ' rows</td><td><button class="btn btn-secondary" onclick="viewTable(\\'' + t.name + '\\')">Query Rows</button></td></tr>').join('');
+        tb.innerHTML = list.map(t => '<tr><td><strong>' + t.name + '</strong></td><td>' + (t.rowCount != null ? t.rowCount : (t.recordCount || 0)) + ' rows</td><td><button class="btn btn-secondary" onclick="viewTable(\\'' + t.name + '\\')">Query Rows</button></td></tr>').join('');
       } catch (e) {
         document.getElementById('tables-tbody').innerHTML = '<tr><td colspan="3" style="color:#ef4444; padding:2rem; text-align:center;">Failed to load tables. Sign in to view database.</td></tr>';
       }
@@ -600,7 +613,7 @@ export function getEmbeddedDashboardHtml(): string {
     async function viewTable(name) {
       try {
         const d = await api('/api/v1/db/' + name + '/query', { method: 'POST', body: JSON.stringify({ limit: 10 }) });
-        alert('Table ' + name + ' (' + d.total + ' total records):\\n' + JSON.stringify(d.records, null, 2));
+        alert('Table ' + name + ' (' + (d.total || (d.records && d.records.length) || 0) + ' total records):\\n' + JSON.stringify(d.records || d.data || d, null, 2));
       } catch (e) {
         alert('Error querying table: ' + e.message);
       }
@@ -609,12 +622,13 @@ export function getEmbeddedDashboardHtml(): string {
     async function loadFiles() {
       try {
         const d = await api('/api/v1/storage/files');
+        const list = Array.isArray(d) ? d : (d.files || d.data || []);
         const tb = document.getElementById('files-tbody');
-        if (!d.files || d.files.length === 0) {
+        if (list.length === 0) {
           tb.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;">No files uploaded yet.</td></tr>';
           return;
         }
-        tb.innerHTML = d.files.map(f => '<tr><td>' + f.originalName + '</td><td>' + (f.sizeBytes / 1024).toFixed(1) + ' KB</td><td>' + f.uploadedAt.split('T')[0] + '</td><td><code>' + f.mimeType + '</code></td><td><a href="/api/v1/storage/' + f.id + '" target="_blank" class="btn btn-secondary">Download</a></td></tr>').join('');
+        tb.innerHTML = list.map(f => '<tr><td>' + (f.originalName || f.name) + '</td><td>' + ((f.sizeBytes || 0) / 1024).toFixed(1) + ' KB</td><td>' + (f.uploadedAt || f.createdAt || '').split('T')[0] + '</td><td><code>' + (f.mimeType || 'unknown') + '</code></td><td><a href="/api/v1/storage/' + f.id + '" target="_blank" class="btn btn-secondary">Download</a></td></tr>').join('');
       } catch (e) {
         document.getElementById('files-tbody').innerHTML = '<tr><td colspan="5" style="color:#ef4444; padding:2rem; text-align:center;">Failed to load files. Sign in to view storage.</td></tr>';
       }
@@ -624,7 +638,8 @@ export function getEmbeddedDashboardHtml(): string {
       try {
         const d = await api('/api/v1/capabilities');
         const c = document.getElementById('diagnostics-content');
-        c.innerHTML = d.checks.map(k => '<div class="cute-card"><h3>' + k.name + '</h3><div style="font-weight:700; font-size:1.05rem; margin-top:0.25rem; font-family:\\'JetBrains Mono\\', monospace;">' + k.value + '</div><p style="font-size:0.8rem; color:var(--text-muted); margin-top:0.35rem; line-height:1.4;">' + k.message + '</p></div>').join('');
+        const checks = d.checks || [];
+        c.innerHTML = checks.map(k => '<div class="cute-card"><h3>' + k.name + '</h3><div style="font-weight:700; font-size:1.05rem; margin-top:0.25rem; font-family:\\'JetBrains Mono\\', monospace;">' + k.value + '</div><p style="font-size:0.8rem; color:var(--text-muted); margin-top:0.35rem; line-height:1.4;">' + k.message + '</p></div>').join('');
       } catch (e) {
         document.getElementById('diagnostics-content').innerHTML = '<div style="color:#ef4444; padding:1rem;">Failed to load diagnostic details.</div>';
       }
@@ -633,12 +648,13 @@ export function getEmbeddedDashboardHtml(): string {
     async function loadBackups() {
       try {
         const d = await api('/api/v1/backups');
+        const list = Array.isArray(d) ? d : (d.backups || d.data || []);
         const tb = document.getElementById('backups-tbody');
-        if (!d.backups || d.backups.length === 0) {
+        if (list.length === 0) {
           tb.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;">No snapshot backups created yet.</td></tr>';
           return;
         }
-        tb.innerHTML = d.backups.map(b => '<tr><td><code>' + b.id + '</code></td><td>' + b.filename + '</td><td>' + (b.sizeBytes / 1024).toFixed(1) + ' KB</td><td>' + b.createdAt.split('T')[0] + '</td><td><code>' + b.sha256.substring(0, 16) + '...</code></td></tr>').join('');
+        tb.innerHTML = list.map(b => '<tr><td><code>' + (b.id ? b.id.substring(0,8) : '--') + '</code></td><td>' + b.filename + '</td><td>' + ((b.sizeBytes || 0) / 1024).toFixed(1) + ' KB</td><td>' + (b.createdAt || '').split('T')[0] + '</td><td><code>' + (b.sha256 ? b.sha256.substring(0, 16) : '') + '...</code></td></tr>').join('');
       } catch (e) {
         document.getElementById('backups-tbody').innerHTML = '<tr><td colspan="5" style="color:#ef4444; padding:2rem; text-align:center;">Failed to load backups. Sign in to manage snapshots.</td></tr>';
       }
@@ -669,7 +685,9 @@ export function getEmbeddedDashboardHtml(): string {
     function toggleAuthModal() {
       if (authToken) {
         authToken = '';
+        localStorage.removeItem('androbase_auth_token');
         localStorage.removeItem('androbase_jwt');
+        localStorage.removeItem('androbase_auth_user');
         document.getElementById('btn-auth-action').textContent = 'Login';
         document.getElementById('user-display').style.display = 'none';
         refreshStatus();
@@ -687,13 +705,17 @@ export function getEmbeddedDashboardHtml(): string {
         const res = await api('/api/v1/auth/bootstrap', { method: 'POST', body: JSON.stringify({ bootstrapToken: token, username, password }) });
         if (res.token) {
           authToken = res.token;
+          localStorage.setItem('androbase_auth_token', authToken);
           localStorage.setItem('androbase_jwt', authToken);
+          localStorage.setItem('androbase_auth_user', JSON.stringify(res.user));
           alert('Admin initialized successfully!');
           closeBootstrapModal();
           document.getElementById('btn-auth-action').textContent = 'Logout';
           document.getElementById('user-display').style.display = 'inline-flex';
           document.getElementById('user-display').textContent = res.user.username;
           refreshStatus();
+          loadTables();
+          loadFiles();
         } else {
           alert('Bootstrap error: ' + (res.error || 'Failed'));
         }
@@ -707,15 +729,22 @@ export function getEmbeddedDashboardHtml(): string {
       const username = document.getElementById('lg-user').value.trim();
       const password = document.getElementById('lg-pass').value;
       try {
-        const res = await api('/api/v1/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) });
+        const res = await api('/api/v1/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ identifier: username, username, password })
+        });
         if (res.token) {
           authToken = res.token;
+          localStorage.setItem('androbase_auth_token', authToken);
           localStorage.setItem('androbase_jwt', authToken);
+          localStorage.setItem('androbase_auth_user', JSON.stringify(res.user));
           document.getElementById('login-modal').classList.add('hidden');
           document.getElementById('btn-auth-action').textContent = 'Logout';
           document.getElementById('user-display').style.display = 'inline-flex';
           document.getElementById('user-display').textContent = res.user.username;
           refreshStatus();
+          loadTables();
+          loadFiles();
         } else {
           alert('Login failed: ' + (res.error || 'Invalid credentials'));
         }

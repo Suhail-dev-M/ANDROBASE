@@ -10,17 +10,21 @@ const USER_KEY = 'androbase_auth_user';
 
 export class ApiClient {
   public static getToken(): string | null {
-    return localStorage.getItem(TOKEN_KEY);
+    return localStorage.getItem(TOKEN_KEY) || localStorage.getItem('androbase_jwt');
   }
 
   public static setAuth(token: string, user: User): void {
     localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem('androbase_jwt', token);
     localStorage.setItem(USER_KEY, JSON.stringify(user));
+    window.dispatchEvent(new Event('androbase_auth_changed'));
   }
 
   public static clearAuth(): void {
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem('androbase_jwt');
     localStorage.removeItem(USER_KEY);
+    window.dispatchEvent(new Event('androbase_auth_changed'));
   }
 
   public static getStoredUser(): User | null {
