@@ -1866,6 +1866,7 @@ function getEmbeddedDashboardHtml() {
       <span class="badge badge-success" id="hdr-profile">Profile C</span>
     </div>
     <div style="display:flex; align-items:center; gap:0.75rem;">
+      <button class="btn btn-primary" id="btn-setup-admin" onclick="openBootstrapModal()">\u{1F511} Set Up Admin</button>
       <span id="user-display" class="badge badge-warning" style="display:none;">Admin</span>
       <button class="btn btn-secondary" id="btn-auth-action" onclick="toggleAuthModal()">Login</button>
     </div>
@@ -1881,17 +1882,23 @@ function getEmbeddedDashboardHtml() {
   </nav>
 
   <main>
-    <!-- Admin Setup Alert -->
+    <!-- Admin Setup Alert Banner -->
     <div id="bootstrap-banner" class="banner hidden">
       <div>
         <strong style="color:#10b981;">\u{1F511} Admin Setup Required</strong>
-        <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0.2rem;">This server has no admin configured. Check Termux console or <code>.androbase/.bootstrap_token</code> to complete initial setup.</p>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0.2rem;">This server has no admin configured. Check Termux console or <code>cat ~/.androbase/.bootstrap_token</code> to complete initial setup.</p>
       </div>
       <button class="btn btn-primary" onclick="openBootstrapModal()">Set Up Admin</button>
     </div>
 
     <!-- OVERVIEW TAB -->
     <div id="tab-overview">
+      <!-- Quick Admin Setup Callout Card -->
+      <div id="overview-setup-card" class="card hidden" style="border-color:#10b981; background:rgba(16,185,129,0.08); margin-bottom:1.5rem;">
+        <h3 style="color:#10b981; font-size:0.95rem; text-transform:none;">\u{1F680} First Time Setup Required</h3>
+        <p style="font-size:0.85rem; color:#d1d5db; margin-top:0.35rem;">Initialize your administrator account to unlock database tables, file uploads, and system backups.</p>
+        <button class="btn btn-primary" style="margin-top:0.75rem;" onclick="openBootstrapModal()">\u{1F511} Click Here to Set Up Admin</button>
+      </div>
       <div class="grid">
         <div class="card">
           <h3>Server Status</h3>
@@ -2041,6 +2048,11 @@ function getEmbeddedDashboardHtml() {
           <label>Password</label>
           <input type="password" id="lg-pass" required />
         </div>
+        <div style="margin-top:0.85rem; text-align:center;">
+          <a href="javascript:void(0)" onclick="toggleAuthModal(); openBootstrapModal();" style="color:#10b981; font-size:0.8rem; text-decoration:none; font-weight:500;">
+            \u{1F511} First time here? Click to set up admin account
+          </a>
+        </div>
         <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1.25rem;">
           <button type="button" class="btn btn-secondary" onclick="toggleAuthModal()">Cancel</button>
           <button type="submit" class="btn btn-primary">Sign In</button>
@@ -2081,19 +2093,43 @@ function getEmbeddedDashboardHtml() {
     async function refreshStatus() {
       try {
         const d = await api('/api/v1/status');
-        document.getElementById('stat-status').textContent = d.status === 'online' ? 'Online' : d.status;
-        document.getElementById('stat-uptime').textContent = 'Uptime: ' + Math.floor(d.uptimeSeconds / 60) + 'm ' + (d.uptimeSeconds % 60) + 's';
-        document.getElementById('stat-profile').textContent = d.profile.name;
-        document.getElementById('stat-tier').textContent = d.profile.targetTier;
-        document.getElementById('hdr-profile').textContent = d.profile.name.split('\u2014')[0].trim();
-        document.getElementById('stat-mem').textContent = d.memory.freeMb + ' / ' + d.memory.totalMb + ' MB';
-        document.getElementById('stat-mem-sub').textContent = 'V8 Limit: ' + d.memory.heapLimitMb + ' MB';
-        document.getElementById('stat-lan').textContent = d.network.lanIps[0] ? d.network.lanIps[0] + ':' + d.network.port : '127.0.0.1:' + d.network.port;
+        document.getElementById('stat-status').textContent = d.status === 'online' ? 'Online' : (d.status || 'Active');
+        document.getElementById('stat-uptime').textContent = 'Uptime: ' + Math.floor((d.uptimeSeconds || 0) / 60) + 'm ' + ((d.uptimeSeconds || 0) % 60) + 's';
 
-        if (!d.hasAdmin && !authToken) {
-          document.getElementById('bootstrap-banner').classList.remove('hidden');
+        const profileStr = d.profileName || d.profile || 'Profile C';
+        document.getElementById('stat-profile').textContent = profileStr.split('\u2014')[0].trim();
+        document.getElementById('stat-tier').textContent = profileStr.includes('\u2014') ? profileStr.split('\u2014')[1].trim() : (d.device ? d.device.arch + ' / ' + d.device.nodeVersion : 'Standard Mobile');
+        document.getElementById('hdr-profile').textContent = profileStr.split('\u2014')[0].trim();
+
+        const freeMb = (d.device && d.device.freeMemoryMb != null) ? d.device.freeMemoryMb : (d.memory ? d.memory.freeMb : '--');
+        const totalMb = (d.device && d.device.totalMemoryMb != null) ? d.device.totalMemoryMb : (d.memory ? d.memory.totalMb : '--');
+        const heapLimit = (d.device && d.device.heapLimitMb != null) ? d.device.heapLimitMb : 256;
+        document.getElementById('stat-mem').textContent = freeMb + ' / ' + totalMb + ' MB';
+        document.getElementById('stat-mem-sub').textContent = 'V8 Limit: ' + heapLimit + ' MB';
+
+        const lanIp = (d.network && d.network.lanIps && d.network.lanIps[0]) ? d.network.lanIps[0] : '127.0.0.1';
+        const port = (d.network && d.network.port) || 3000;
+        document.getElementById('stat-lan').textContent = lanIp + ':' + port;
+
+        const hasAdmin = !!d.hasAdmin;
+        const banner = document.getElementById('bootstrap-banner');
+        const btnSetup = document.getElementById('btn-setup-admin');
+        const cardSetup = document.getElementById('overview-setup-card');
+
+        if (!hasAdmin) {
+          if (banner) banner.classList.remove('hidden');
+          if (btnSetup) btnSetup.style.display = 'inline-flex';
+          if (cardSetup) cardSetup.classList.remove('hidden');
+
+          // Auto open modal on first load if no admin exists yet
+          if (!sessionStorage.getItem('androbase_auto_bootstrap_shown')) {
+            sessionStorage.setItem('androbase_auto_bootstrap_shown', 'true');
+            openBootstrapModal();
+          }
         } else {
-          document.getElementById('bootstrap-banner').classList.add('hidden');
+          if (banner) banner.classList.add('hidden');
+          if (btnSetup) btnSetup.style.display = 'none';
+          if (cardSetup) cardSetup.classList.add('hidden');
         }
       } catch (e) {
         console.error('Failed to load status', e);
