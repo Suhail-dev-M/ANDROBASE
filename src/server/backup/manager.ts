@@ -12,6 +12,7 @@ import { db } from '../db/portable-db.ts';
 import { BackupMetadata } from '../types.ts';
 import { CapabilityDetector } from '../detector.ts';
 import { AuditLogger } from '../audit/logger.ts';
+import { generateUUID } from '../utils/id.ts';
 
 export interface BackupArchiveContent {
   metadata: BackupMetadata;
@@ -32,7 +33,7 @@ export class BackupManager {
 
   public static async createBackup(createdBy: string = 'system'): Promise<BackupMetadata> {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const backupId = crypto.randomUUID();
+    const backupId = generateUUID();
     const filename = `androbase_backup_${timestamp}.json`;
     const targetFilePath = path.join(this.backupsDir, filename);
 

@@ -10,6 +10,7 @@ import crypto from 'crypto';
 import { config } from '../config.ts';
 import { db } from '../db/portable-db.ts';
 import { AuditLogEntry } from '../types.ts';
+import { generateUUID } from '../utils/id.ts';
 
 export class AuditLogger {
   private static logFilePath = path.join(config.logsDir, 'androbase-audit.log');
@@ -17,7 +18,7 @@ export class AuditLogger {
 
   public static log(entry: Omit<AuditLogEntry, 'id' | 'timestamp'>): void {
     const fullEntry: AuditLogEntry = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       timestamp: new Date().toISOString(),
       ...entry,
     };

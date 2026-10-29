@@ -9,6 +9,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { config } from '../config.ts';
+import { generateUUID } from '../utils/id.ts';
 
 export interface ColumnDef {
   name: string;
@@ -381,7 +382,7 @@ export class PortableDatabase {
     const newRecord: any = { ...record };
 
     if (!newRecord[pk]) {
-      newRecord[pk] = crypto.randomUUID();
+      newRecord[pk] = generateUUID();
     }
 
     // Check unique constraints

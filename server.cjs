@@ -93,7 +93,21 @@ var config = {
 // src/server/db/portable-db.ts
 var import_fs2 = __toESM(require("fs"));
 var import_path2 = __toESM(require("path"));
+
+// src/server/utils/id.ts
 var import_crypto = __toESM(require("crypto"));
+function generateUUID() {
+  if (typeof import_crypto.default.randomUUID === "function") {
+    return import_crypto.default.randomUUID();
+  }
+  const bytes = import_crypto.default.randomBytes(16);
+  bytes[6] = bytes[6] & 15 | 64;
+  bytes[8] = bytes[8] & 63 | 128;
+  const hex = bytes.toString("hex");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+}
+
+// src/server/db/portable-db.ts
 var PortableDatabase = class {
   constructor(dbPath2 = config.dbPath) {
     this.payload = {
@@ -373,7 +387,7 @@ var PortableDatabase = class {
     const pk = schema.primaryKey;
     const newRecord = { ...record };
     if (!newRecord[pk]) {
-      newRecord[pk] = import_crypto.default.randomUUID();
+      newRecord[pk] = generateUUID();
     }
     const table = this.payload.tables[tableName];
     for (const col of schema.columns) {
@@ -512,17 +526,16 @@ var import_os3 = __toESM(require("os"));
 var import_fs7 = __toESM(require("fs"));
 
 // src/server/security/auth.ts
-var import_crypto3 = __toESM(require("crypto"));
+var import_crypto2 = __toESM(require("crypto"));
 
 // src/server/audit/logger.ts
 var import_fs3 = __toESM(require("fs"));
 var import_path3 = __toESM(require("path"));
-var import_crypto2 = __toESM(require("crypto"));
 var AuditLogger = class {
   // 2MB max log file on mobile flash
   static log(entry) {
     const fullEntry = {
-      id: import_crypto2.default.randomUUID(),
+      id: generateUUID(),
       timestamp: (/* @__PURE__ */ new Date()).toISOString(),
       ...entry
     };
@@ -578,9 +591,9 @@ AuditLogger.maxLogSizeBytes = 1024 * 1024 * 2;
 var AuthService = class {
   // 15 mins
   static hashPassword(password, saltHex) {
-    const salt = saltHex ? Buffer.from(saltHex, "hex") : import_crypto3.default.randomBytes(16);
+    const salt = saltHex ? Buffer.from(saltHex, "hex") : import_crypto2.default.randomBytes(16);
     const iterations = 1e4;
-    const derivedKey = import_crypto3.default.pbkdf2Sync(password, salt, iterations, 32, "sha256");
+    const derivedKey = import_crypto2.default.pbkdf2Sync(password, salt, iterations, 32, "sha256");
     return {
       hash: derivedKey.toString("hex"),
       salt: salt.toString("hex")
@@ -589,15 +602,15 @@ var AuthService = class {
   static verifyPassword(password, storedHash, saltHex) {
     const salt = Buffer.from(saltHex, "hex");
     const iterations = 1e4;
-    const derivedKey = import_crypto3.default.pbkdf2Sync(password, salt, iterations, 32, "sha256");
+    const derivedKey = import_crypto2.default.pbkdf2Sync(password, salt, iterations, 32, "sha256");
     const storedBuf = Buffer.from(storedHash, "hex");
     if (derivedKey.length !== storedBuf.length) {
       return false;
     }
-    return import_crypto3.default.timingSafeEqual(derivedKey, storedBuf);
+    return import_crypto2.default.timingSafeEqual(derivedKey, storedBuf);
   }
   static hashToken(token) {
-    return import_crypto3.default.createHash("sha256").update(token).digest("hex");
+    return import_crypto2.default.createHash("sha256").update(token).digest("hex");
   }
   static checkRateLimit(ip) {
     const now = Date.now();
@@ -655,11 +668,11 @@ var AuthService = class {
       throw new Error("Password must be at least 8 characters.");
     }
     const { hash, salt } = this.hashPassword(params.password);
-    const userId = import_crypto3.default.randomUUID();
+    const userId = generateUUID();
     const userRecord = {
       id: userId,
       username: params.username.trim().toLowerCase(),
-      email: params.email.trim().toLowerCase(),
+      email: (params.email || `${params.username.trim()}@local.lan`).trim().toLowerCase(),
       passwordHash: hash,
       salt,
       role: "admin",
@@ -692,7 +705,7 @@ var AuthService = class {
       throw new Error("Password must be at least 8 characters long.");
     }
     const { hash, salt } = this.hashPassword(params.password);
-    const userId = import_crypto3.default.randomUUID();
+    const userId = generateUUID();
     const user = {
       id: userId,
       username,
@@ -776,11 +789,11 @@ var AuthService = class {
     return this.createSession(user, ip, userAgent);
   }
   static createSession(user, ip, userAgent) {
-    const token = import_crypto3.default.randomBytes(32).toString("hex");
+    const token = import_crypto2.default.randomBytes(32).toString("hex");
     const tokenHash = this.hashToken(token);
     const expiresAt = new Date(Date.now() + config.sessionTtlHours * 60 * 60 * 1e3).toISOString();
     const session = {
-      id: import_crypto3.default.randomUUID(),
+      id: generateUUID(),
       userId: user.id,
       tokenHash,
       createdAt: (/* @__PURE__ */ new Date()).toISOString(),
@@ -866,7 +879,7 @@ AuthService.LOCKOUT_MS = 15 * 60 * 1e3;
 var import_os = __toESM(require("os"));
 var import_fs4 = __toESM(require("fs"));
 var import_path4 = __toESM(require("path"));
-var import_crypto4 = __toESM(require("crypto"));
+var import_crypto3 = __toESM(require("crypto"));
 var import_child_process = require("child_process");
 var PROFILES = {
   profile_a: {
@@ -959,8 +972,8 @@ var _CapabilityDetector = class _CapabilityDetector {
     });
     let cryptoOk = false;
     try {
-      const testSalt = import_crypto4.default.randomBytes(16);
-      const testHash = import_crypto4.default.pbkdf2Sync("testPassword123", testSalt, 1e3, 32, "sha256");
+      const testSalt = import_crypto3.default.randomBytes(16);
+      const testHash = import_crypto3.default.pbkdf2Sync("testPassword123", testSalt, 1e3, 32, "sha256");
       cryptoOk = testHash.length === 32;
     } catch {
       cryptoOk = false;
@@ -1104,7 +1117,7 @@ function v8HeapLimitMb() {
 // src/server/storage/file-storage.ts
 var import_fs5 = __toESM(require("fs"));
 var import_path5 = __toESM(require("path"));
-var import_crypto5 = __toESM(require("crypto"));
+var import_crypto4 = __toESM(require("crypto"));
 var DISALLOWED_EXTENSIONS = /* @__PURE__ */ new Set([
   ".exe",
   ".apk",
@@ -1146,8 +1159,8 @@ var FileStorageService = class {
       throw new Error("Execution hazard: File extension is not permitted for storage.");
     }
     const cleanBaseName = this.sanitizeFilename(originalName);
-    const fileId = import_crypto5.default.randomUUID();
-    const sha256 = import_crypto5.default.createHash("sha256").update(buffer).digest("hex");
+    const fileId = generateUUID();
+    const sha256 = import_crypto4.default.createHash("sha256").update(buffer).digest("hex");
     const storageName = `${fileId}_${cleanBaseName}`;
     const destinationPath = this.validatePathSafe(storageName);
     const tempPath = `${destinationPath}.upload.${Date.now()}`;
@@ -1240,12 +1253,12 @@ FileStorageService.storageRoot = config.storageDir;
 // src/server/backup/manager.ts
 var import_fs6 = __toESM(require("fs"));
 var import_path6 = __toESM(require("path"));
-var import_crypto6 = __toESM(require("crypto"));
+var import_crypto5 = __toESM(require("crypto"));
 var BackupManager = class {
   static async createBackup(createdBy = "system") {
     var _a;
     const timestamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
-    const backupId = import_crypto6.default.randomUUID();
+    const backupId = generateUUID();
     const filename = `androbase_backup_${timestamp}.json`;
     const targetFilePath = import_path6.default.join(this.backupsDir, filename);
     const dbDump = db.getRawDump();
@@ -1283,7 +1296,7 @@ var BackupManager = class {
       fileInventory
     };
     const serialized = JSON.stringify(archive, null, 2);
-    const sha256 = import_crypto6.default.createHash("sha256").update(serialized).digest("hex");
+    const sha256 = import_crypto5.default.createHash("sha256").update(serialized).digest("hex");
     const sizeBytes = Buffer.byteLength(serialized, "utf8");
     archive.metadata.sha256 = sha256;
     archive.metadata.sizeBytes = sizeBytes;

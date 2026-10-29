@@ -15,6 +15,7 @@ import { CapabilityDetector } from '../src/server/detector.ts';
 import { FileStorageService } from '../src/server/storage/file-storage.ts';
 import { BackupManager } from '../src/server/backup/manager.ts';
 import { config } from '../src/server/config.ts';
+import { generateUUID } from '../src/server/utils/id.ts';
 
 let passed = 0;
 let failed = 0;
@@ -61,6 +62,15 @@ async function runAllTests() {
     assert.strictEqual(valid, true, 'Valid password verification');
     const invalid = AuthService.verifyPassword('WrongPassword', hash, salt);
     assert.strictEqual(invalid, false, 'Invalid password rejection');
+  });
+
+  await test('Portable generateUUID works across modern and legacy Node.js environments (RFC 4122 v4)', () => {
+    const id1 = generateUUID();
+    const id2 = generateUUID();
+    assert.ok(id1 && id2, 'Must generate non-empty UUIDs');
+    assert.notStrictEqual(id1, id2, 'UUIDs must be unique');
+    assert.strictEqual(id1.length, 36, 'UUID must be 36 characters (8-4-4-4-12 format)');
+    assert.strictEqual(id1[14], '4', 'Must be valid RFC 4122 version 4');
   });
 
   console.log('\n--- 2. INTEGRATION TESTS: Database Engine & Transactions ---');

@@ -10,6 +10,7 @@ import { db } from '../db/portable-db.ts';
 import { config } from '../config.ts';
 import { UserRecord, SessionRecord } from '../types.ts';
 import { AuditLogger } from '../audit/logger.ts';
+import { generateUUID } from '../utils/id.ts';
 
 export interface AuthResult {
   user: Omit<UserRecord, 'passwordHash' | 'salt'>;
@@ -126,12 +127,12 @@ export class AuthService {
     }
 
     const { hash, salt } = this.hashPassword(params.password);
-    const userId = crypto.randomUUID();
+    const userId = generateUUID();
 
     const userRecord: UserRecord = {
       id: userId,
       username: params.username.trim().toLowerCase(),
-      email: params.email.trim().toLowerCase(),
+      email: (params.email || `${params.username.trim()}@local.lan`).trim().toLowerCase(),
       passwordHash: hash,
       salt,
       role: 'admin',
@@ -181,7 +182,7 @@ export class AuthService {
     }
 
     const { hash, salt } = this.hashPassword(params.password);
-    const userId = crypto.randomUUID();
+    const userId = generateUUID();
 
     const user: UserRecord = {
       id: userId,
@@ -292,7 +293,7 @@ export class AuthService {
     const expiresAt = new Date(Date.now() + config.sessionTtlHours * 60 * 60 * 1000).toISOString();
 
     const session: SessionRecord = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       userId: user.id,
       tokenHash,
       createdAt: new Date().toISOString(),
