@@ -92,6 +92,18 @@ export default function App() {
     fetchStatus();
     fetchCapabilities();
 
+    // Check if session is already active or if on Profile A
+    if (!ApiClient.getStoredUser()) {
+      ApiClient.getMe()
+        .then((res) => {
+          if (res?.user) {
+            ApiClient.setAuth('profile_a_session', res.user);
+            setCurrentUser(res.user);
+          }
+        })
+        .catch(() => {});
+    }
+
     const handleAuthChange = () => {
       const user = ApiClient.getStoredUser();
       setCurrentUser(user);
@@ -150,11 +162,22 @@ export default function App() {
           />
         )}
 
-        {(activeTab === 'files' || activeTab === 'storage') && <FileManagerTab />}
+        {(activeTab === 'files' || activeTab === 'storage') && (
+          <FileManagerTab
+            onOpenLogin={() => setIsLoginOpen(true)}
+            onOpenBootstrap={() => setIsBootstrapOpen(true)}
+          />
+        )}
 
         {activeTab === 'apps' && <AppsManagerTab />}
 
-        {activeTab === 'database' && <DatabaseTab />}
+        {activeTab === 'database' && (
+          <DatabaseTab
+            currentUser={currentUser}
+            onOpenLogin={() => setIsLoginOpen(true)}
+            onOpenBootstrap={() => setIsBootstrapOpen(true)}
+          />
+        )}
 
         {activeTab === 'containers' && <ContainersTab />}
 

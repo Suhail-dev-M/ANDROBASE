@@ -158,6 +158,14 @@ export class AuthService {
     return users.some((u) => u.role === 'admin' || u.role === 'super_admin');
   }
 
+  public static getPrimaryAdmin(): Omit<UserRecord, 'passwordHash' | 'salt'> | null {
+    const users = db.query<UserRecord>('_users').data;
+    const admin = users.find((u) => u.isActive && (u.role === 'super_admin' || u.role === 'admin')) || users[0];
+    if (!admin || !admin.isActive) return null;
+    const { passwordHash: _, salt: __, ...safe } = admin;
+    return safe;
+  }
+
   public static hasPermission(user: any, permission: ServerPermission): boolean {
     if (!user) return false;
     if (user.role === 'super_admin') return true;

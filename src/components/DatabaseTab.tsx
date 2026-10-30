@@ -11,15 +11,21 @@ import {
   ShieldCheck, X, Sparkles, Filter, Code2, ArrowUpDown
 } from 'lucide-react';
 import { ApiClient } from '../api.ts';
-import { TableInfo } from '../types.ts';
+import { TableInfo, User } from '../types.ts';
 
-export const DatabaseTab: React.FC = () => {
+interface DatabaseTabProps {
+  currentUser?: User | null;
+  onOpenLogin?: () => void;
+  onOpenBootstrap?: () => void;
+}
+
+export const DatabaseTab: React.FC<DatabaseTabProps> = ({ currentUser, onOpenLogin, onOpenBootstrap }) => {
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [selectedTable, setSelectedTable] = useState<string>('notes');
   const [tableData, setTableData] = useState<any[]>([]);
   const [totalRecords, setTotalRecords] = useState(0);
   const [page, setPage] = useState(1);
-  const [limit] = useState(15);
+  const [limit, setLimit] = useState(15);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -304,14 +310,32 @@ export const DatabaseTab: React.FC = () => {
       )}
 
       {error && (
-        <div className="p-3.5 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs flex items-center justify-between shadow-sm">
-          <div className="flex items-center gap-2">
+        <div className="p-4 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+          <div className="flex items-center gap-2.5">
             <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
             <span>{error}</span>
           </div>
-          <button onClick={() => setError(null)} className="text-slate-400 hover:text-white p-1">
-            <X className="w-3.5 h-3.5" />
-          </button>
+          <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+            {(error.includes('Authentication') || error.includes('Bearer') || error.includes('token') || error.includes('sign in')) && onOpenLogin && (
+              <button
+                onClick={onOpenLogin}
+                className="px-3 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs transition-colors shadow-sm"
+              >
+                Sign In
+              </button>
+            )}
+            {(error.includes('setup') || error.includes('bootstrap') || error.includes('initialize')) && onOpenBootstrap && (
+              <button
+                onClick={onOpenBootstrap}
+                className="px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold text-xs transition-colors shadow-sm"
+              >
+                Set Up Admin
+              </button>
+            )}
+            <button onClick={() => setError(null)} className="text-slate-400 hover:text-white p-1" title="Dismiss">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       )}
 

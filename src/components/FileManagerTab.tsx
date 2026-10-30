@@ -7,7 +7,12 @@ import {
 import { ApiClient } from '../api.ts';
 import { FileSystemEntry } from '../types.ts';
 
-export const FileManagerTab: React.FC = () => {
+interface FileManagerTabProps {
+  onOpenLogin?: () => void;
+  onOpenBootstrap?: () => void;
+}
+
+export const FileManagerTab: React.FC<FileManagerTabProps> = ({ onOpenLogin, onOpenBootstrap }) => {
   const [currentPath, setCurrentPath] = useState<string>('');
   const [entries, setEntries] = useState<FileSystemEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -261,14 +266,32 @@ export const FileManagerTab: React.FC = () => {
         )}
 
         {error && (
-          <div className="mt-3 px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center justify-between">
+          <div className="mt-3 px-3.5 py-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
             <div className="flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
               <span>{error}</span>
             </div>
-            <button onClick={() => setError(null)} className="text-red-400 hover:text-white text-xs font-bold">
-              Dismiss
-            </button>
+            <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+              {(error.includes('Authentication') || error.includes('Bearer') || error.includes('token') || error.includes('sign in')) && onOpenLogin && (
+                <button
+                  onClick={onOpenLogin}
+                  className="px-3 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs transition-colors"
+                >
+                  Sign In
+                </button>
+              )}
+              {(error.includes('setup') || error.includes('bootstrap') || error.includes('initialize')) && onOpenBootstrap && (
+                <button
+                  onClick={onOpenBootstrap}
+                  className="px-3 py-1 rounded-lg bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold text-xs transition-colors"
+                >
+                  Set Up Admin
+                </button>
+              )}
+              <button onClick={() => setError(null)} className="text-slate-400 hover:text-white text-xs font-semibold px-1">
+                Dismiss
+              </button>
+            </div>
           </div>
         )}
       </div>
