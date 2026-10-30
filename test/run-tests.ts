@@ -149,6 +149,44 @@ async function runAllTests() {
     AuthService.resetRateLimit(testIp);
   });
 
+  await test('Session authentication strictly enforces credentials on every visit', () => {
+    // Unauthenticated token must fail
+    assert.strictEqual(AuthService.authenticateToken(''), null);
+    assert.strictEqual(AuthService.authenticateToken('invalid_token_123'), null);
+
+    // Bootstrap or create test admin
+    if (!AuthService.hasAdmin()) {
+      db.insert('_users', {
+        id: 'test-admin-id',
+        username: 'testadmin',
+        email: 'testadmin@local.lan',
+        passwordHash: 'hash',
+        salt: 'salt',
+        role: 'super_admin',
+        createdAt: new Date().toISOString(),
+        isActive: true,
+      });
+    }
+
+    assert.strictEqual(AuthService.hasAdmin(), true, 'Admin account configured');
+
+    const admin = AuthService.getPrimaryAdmin();
+    assert.ok(admin, 'Primary admin exists');
+
+    // Create a real session token
+    const session = AuthService.createSession(admin as any, '127.0.0.1', 'unit-test');
+    assert.ok(session.token, 'Session token created');
+
+    // Valid token passes authentication
+    const auth = AuthService.authenticateToken(session.token);
+    assert.ok(auth, 'Authentication with valid token succeeds');
+    assert.strictEqual(auth?.user.username, admin?.username);
+
+    // Logout invalidates session
+    AuthService.logout(session.token);
+    assert.strictEqual(AuthService.authenticateToken(session.token), null, 'Logged out token is rejected');
+  });
+
   console.log('\n--- 4. SECURITY TESTS: Path Traversal & Executable Upload Guards ---');
   await test('File storage sanitizes malicious paths and blocks directory traversal', () => {
     const maliciousName = '../../../../etc/passwd';

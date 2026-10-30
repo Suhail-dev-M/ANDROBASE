@@ -27,6 +27,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -47,7 +48,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
     try {
       const res = await ApiClient.login(identifier, password);
-      ApiClient.setAuth(res.token, res.user);
+      ApiClient.setAuth(res.token, res.user, rememberMe);
       onSuccess(res.user);
       onClose();
     } catch (err: any) {
@@ -130,6 +131,19 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
+          </div>
+
+          <div className="flex items-center gap-2 pt-0.5">
+            <input
+              type="checkbox"
+              id="rememberMe"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="w-4 h-4 rounded bg-slate-950 border border-white/[0.2] text-emerald-500 focus:ring-emerald-400 focus:ring-offset-0 cursor-pointer"
+            />
+            <label htmlFor="rememberMe" className="text-[11px] text-slate-400 cursor-pointer select-none">
+              Remember me on this browser (otherwise ask every visit)
+            </label>
           </div>
 
           {!hasAdmin && (

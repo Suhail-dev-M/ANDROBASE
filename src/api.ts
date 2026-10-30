@@ -33,17 +33,37 @@ const USER_KEY = 'androbase_auth_user';
 
 export class ApiClient {
   public static getToken(): string | null {
-    return localStorage.getItem(TOKEN_KEY) || localStorage.getItem('androbase_jwt');
+    return (
+      sessionStorage.getItem(TOKEN_KEY) ||
+      sessionStorage.getItem('androbase_jwt') ||
+      localStorage.getItem(TOKEN_KEY) ||
+      localStorage.getItem('androbase_jwt')
+    );
   }
 
-  public static setAuth(token: string, user: User): void {
-    localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem('androbase_jwt', token);
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
+  public static setAuth(token: string, user: User, remember: boolean = false): void {
+    if (remember) {
+      localStorage.setItem(TOKEN_KEY, token);
+      localStorage.setItem('androbase_jwt', token);
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
+      sessionStorage.removeItem(TOKEN_KEY);
+      sessionStorage.removeItem(USER_KEY);
+    } else {
+      // Per-visit session: strictly cleared when browser tab/window is closed
+      sessionStorage.setItem(TOKEN_KEY, token);
+      sessionStorage.setItem('androbase_jwt', token);
+      sessionStorage.setItem(USER_KEY, JSON.stringify(user));
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem('androbase_jwt');
+      localStorage.removeItem(USER_KEY);
+    }
     window.dispatchEvent(new Event('androbase_auth_changed'));
   }
 
   public static clearAuth(): void {
+    sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem('androbase_jwt');
+    sessionStorage.removeItem(USER_KEY);
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem('androbase_jwt');
     localStorage.removeItem(USER_KEY);
@@ -51,7 +71,7 @@ export class ApiClient {
   }
 
   public static getStoredUser(): User | null {
-    const raw = localStorage.getItem(USER_KEY);
+    const raw = sessionStorage.getItem(USER_KEY) || localStorage.getItem(USER_KEY);
     if (!raw) return null;
     try {
       return JSON.parse(raw);

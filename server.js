@@ -3830,18 +3830,10 @@ var requireAuth = (req, res, next) => {
       needsBootstrap: true
     });
   }
-  const cachedReport = CapabilityDetector.getCached();
-  const isProfileA = !cachedReport || cachedReport.detectedProfile === "profile_a";
-  const isLocal = req.ip === "127.0.0.1" || req.ip === "::1" || req.ip === "::ffff:127.0.0.1" || req.hostname === "localhost" || req.hostname === "127.0.0.1";
-  if (isProfileA || isLocal) {
-    const primaryAdmin = AuthService.getPrimaryAdmin();
-    if (primaryAdmin) {
-      req.user = primaryAdmin;
-      req.session = { id: "profile_a_local_session", userId: primaryAdmin.id, ip: req.ip || "127.0.0.1" };
-      return next();
-    }
-  }
-  return res.status(401).json({ error: "Authentication required. Bearer token missing." });
+  return res.status(401).json({
+    error: "Authentication required. Please sign in with your username and password.",
+    requiresLogin: true
+  });
 };
 var requireAdmin = (req, res, next) => {
   requireAuth(req, res, () => {

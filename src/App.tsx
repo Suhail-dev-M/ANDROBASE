@@ -30,6 +30,7 @@ import { NetworkTab } from './components/NetworkTab.tsx';
 import { ApiExplorerTab } from './components/ApiExplorerTab.tsx';
 import { BootstrapModal } from './components/BootstrapModal.tsx';
 import { LoginModal } from './components/LoginModal.tsx';
+import { ServerLockScreen } from './components/ServerLockScreen.tsx';
 import { ApiClient } from './api.ts';
 import { ServerStatusResponse, CompatibilityReport, User, AuditLog } from './types.ts';
 
@@ -55,7 +56,7 @@ export default function App() {
     try {
       const data = await ApiClient.getStatus();
       setStatus(data);
-      // Auto-trigger bootstrap modal if no admin is configured yet
+      // Auto-trigger bootstrap modal only if no admin is configured yet
       if (!data.hasAdmin && !currentUser && !sessionStorage.getItem('androbase_auto_bootstrap_shown')) {
         sessionStorage.setItem('androbase_auto_bootstrap_shown', 'true');
         setIsBootstrapOpen(true);
@@ -92,16 +93,24 @@ export default function App() {
     fetchStatus();
     fetchCapabilities();
 
-    // Check if session is already active or if on Profile A
-    if (!ApiClient.getStoredUser()) {
+    // Verify existing token on initial load
+    const existingToken = ApiClient.getToken();
+    if (existingToken) {
       ApiClient.getMe()
         .then((res) => {
           if (res?.user) {
-            ApiClient.setAuth('profile_a_session', res.user);
             setCurrentUser(res.user);
+          } else {
+            ApiClient.clearAuth();
+            setCurrentUser(null);
           }
         })
-        .catch(() => {});
+        .catch(() => {
+          ApiClient.clearAuth();
+          setCurrentUser(null);
+        });
+    } else {
+      setCurrentUser(null);
     }
 
     const handleAuthChange = () => {
@@ -146,71 +155,87 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {activeTab === 'overview' && (
-          <OverviewTab
+        {/* If username and password are set, require authentication on every visit to access */}
+        {status?.hasAdmin && !currentUser ? (
+          <ServerLockScreen
             status={status}
-            report={report}
-            auditLogs={auditLogs}
-            onRefresh={() => {
+            onSuccess={(user) => {
+              setCurrentUser(user);
               fetchStatus();
-              fetchCapabilities();
               fetchAuditLogs();
-              showToast('System status refreshed');
+              showToast(`Welcome back, ${user.username}!`);
             }}
-            onNavigate={(tab) => setActiveTab(tab)}
             onOpenBootstrap={() => setIsBootstrapOpen(true)}
           />
+        ) : (
+          <>
+            {activeTab === 'overview' && (
+              <OverviewTab
+                status={status}
+                report={report}
+                auditLogs={auditLogs}
+                onRefresh={() => {
+                  fetchStatus();
+                  fetchCapabilities();
+                  fetchAuditLogs();
+                  showToast('System status refreshed');
+                }}
+                onNavigate={(tab) => setActiveTab(tab)}
+                onOpenBootstrap={() => setIsBootstrapOpen(true)}
+              />
+            )}
+
+            {(activeTab === 'files' || activeTab === 'storage') && (
+              <FileManagerTab
+                onOpenLogin={() => setIsLoginOpen(true)}
+                onOpenBootstrap={() => setIsBootstrapOpen(true)}
+              />
+            )}
+
+            {activeTab === 'apps' && <AppsManagerTab />}
+
+            {activeTab === 'database' && (
+              <DatabaseTab
+                currentUser={currentUser}
+                onOpenLogin={() => setIsLoginOpen(true)}
+                onOpenBootstrap={() => setIsBootstrapOpen(true)}
+              />
+            )}
+
+            {activeTab === 'containers' && <ContainersTab />}
+
+            {activeTab === 'processes' && <ProcessesTab />}
+
+            {activeTab === 'security' && <SecurityCenterTab />}
+
+            {activeTab === 'tasks' && <TaskSchedulerTab />}
+
+            {activeTab === 'media' && <MediaServerTab />}
+
+            {activeTab === 'network' && <NetworkTab />}
+
+            {activeTab === 'devtools' && <DevToolsTab />}
+
+            {activeTab === 'backups' && <BackupsTab />}
+
+            {activeTab === 'users' && <UsersTab currentUser={currentUser} />}
+
+            {activeTab === 'modules' && <ModulesTab />}
+
+            {activeTab === 'diagnostics' && (
+              <DiagnosticsTab
+                report={report}
+                onRefresh={() => {
+                  fetchCapabilities();
+                  showToast('Hardware re-inspected');
+                }}
+                loading={loading}
+              />
+            )}
+
+            {activeTab === 'api' && <ApiExplorerTab />}
+          </>
         )}
-
-        {(activeTab === 'files' || activeTab === 'storage') && (
-          <FileManagerTab
-            onOpenLogin={() => setIsLoginOpen(true)}
-            onOpenBootstrap={() => setIsBootstrapOpen(true)}
-          />
-        )}
-
-        {activeTab === 'apps' && <AppsManagerTab />}
-
-        {activeTab === 'database' && (
-          <DatabaseTab
-            currentUser={currentUser}
-            onOpenLogin={() => setIsLoginOpen(true)}
-            onOpenBootstrap={() => setIsBootstrapOpen(true)}
-          />
-        )}
-
-        {activeTab === 'containers' && <ContainersTab />}
-
-        {activeTab === 'processes' && <ProcessesTab />}
-
-        {activeTab === 'security' && <SecurityCenterTab />}
-
-        {activeTab === 'tasks' && <TaskSchedulerTab />}
-
-        {activeTab === 'media' && <MediaServerTab />}
-
-        {activeTab === 'network' && <NetworkTab />}
-
-        {activeTab === 'devtools' && <DevToolsTab />}
-
-        {activeTab === 'backups' && <BackupsTab />}
-
-        {activeTab === 'users' && <UsersTab currentUser={currentUser} />}
-
-        {activeTab === 'modules' && <ModulesTab />}
-
-        {activeTab === 'diagnostics' && (
-          <DiagnosticsTab
-            report={report}
-            onRefresh={() => {
-              fetchCapabilities();
-              showToast('Hardware re-inspected');
-            }}
-            loading={loading}
-          />
-        )}
-
-        {activeTab === 'api' && <ApiExplorerTab />}
       </main>
 
       {/* Footer */}
@@ -247,8 +272,9 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Mobile Bottom Navigation Dock */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 bg-slate-900/90 backdrop-blur-md border-t border-slate-800/80 px-2 py-1.5 flex items-center justify-around md:hidden">
+      {/* Mobile Bottom Navigation Dock (Visible only when unlocked or in setup) */}
+      {(!status?.hasAdmin || currentUser) && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 bg-slate-900/90 backdrop-blur-md border-t border-slate-800/80 px-2 py-1.5 flex items-center justify-around md:hidden">
         <button
           onClick={() => setActiveTab('overview')}
           className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl text-[10px] font-medium transition-colors ${
@@ -309,6 +335,7 @@ export default function App() {
           <span>More</span>
         </button>
       </div>
+      )}
 
       {/* Global Toast Notification */}
       {toastMessage && (

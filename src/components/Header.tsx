@@ -180,34 +180,67 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Desktop Tab Navigation Bar */}
-        <nav className="hidden lg:flex space-x-1.5 overflow-x-auto py-2.5 border-t border-white/[0.06] no-scrollbar">
-          {navItems.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-xl whitespace-nowrap transition-all flex items-center gap-2 ${
-                  isActive
-                    ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-sm shadow-emerald-500/10'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
-                }`}
-              >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-emerald-400' : 'text-slate-500'}`} />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </nav>
+        {/* Desktop Tab Navigation Bar / Lock Banner */}
+        {status?.hasAdmin && !currentUser ? (
+          <div className="hidden lg:flex items-center justify-between py-2 border-t border-white/[0.06] text-xs">
+            <div className="flex items-center gap-2 text-slate-400">
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+              <span className="text-slate-200 font-semibold">Server Locked</span>
+              <span className="text-slate-600">•</span>
+              <span>Authentication required on every visit. Sign in below with your username and password.</span>
+            </div>
+            <button
+              onClick={onOpenLogin}
+              className="text-xs font-bold text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1.5"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Unlock Console</span>
+            </button>
+          </div>
+        ) : (
+          <nav className="hidden lg:flex space-x-1.5 overflow-x-auto py-2.5 border-t border-white/[0.06] no-scrollbar">
+            {navItems.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`px-3 py-1.5 text-xs font-semibold rounded-xl whitespace-nowrap transition-all flex items-center gap-2 ${
+                    isActive
+                      ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-sm shadow-emerald-500/10'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
+                  }`}
+                >
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-emerald-400' : 'text-slate-500'}`} />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        )}
       </div>
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
         <div className="lg:hidden border-t border-white/[0.08] bg-[#0E1526] px-4 py-3 space-y-1 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-150">
-          <div className="grid grid-cols-2 gap-1.5 mb-2">
-            {navItems.map((tab) => {
+          {status?.hasAdmin && !currentUser ? (
+            <div className="p-3.5 rounded-2xl bg-slate-950 border border-white/[0.08] text-center space-y-2.5">
+              <p className="text-xs font-bold text-white">Server Locked</p>
+              <p className="text-[11px] text-slate-400">Authentication is required to access your home server modules.</p>
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onOpenLogin();
+                }}
+                className="w-full py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-xl transition-colors"
+              >
+                Sign In to Unlock
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-1.5 mb-2">
+              {navItems.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
               return (
@@ -229,6 +262,7 @@ export const Header: React.FC<HeaderProps> = ({
               );
             })}
           </div>
+          )}
 
           {status && (
             <div className="pt-2 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-slate-400">
