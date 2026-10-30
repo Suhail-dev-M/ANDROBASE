@@ -8,7 +8,8 @@ import React, { useState } from 'react';
 import { 
   Sparkles, Key, LogIn, LogOut, Cpu, Wifi, Menu, X, 
   LayoutDashboard, Database, HardDrive, Users, Activity, 
-  Archive, Globe, Terminal, ShieldCheck
+  Archive, Globe, Terminal, ShieldCheck, Box, Clock, 
+  Film, Layers, Sliders
 } from 'lucide-react';
 import { ServerStatusResponse, User } from '../types.ts';
 
@@ -42,14 +43,20 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   const navItems = [
-    { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-    { id: 'database', label: 'Database', icon: Database },
-    { id: 'storage', label: 'Storage', icon: HardDrive },
-    { id: 'users', label: 'Users & Auth', icon: Users },
-    { id: 'diagnostics', label: 'Diagnostics', icon: Activity },
+    { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'files', label: 'File Manager', icon: HardDrive },
+    { id: 'apps', label: 'App Hosting', icon: Layers },
+    { id: 'database', label: 'Database Hub', icon: Database },
+    { id: 'containers', label: 'Containers', icon: Box },
+    { id: 'processes', label: 'Processes', icon: Cpu },
+    { id: 'security', label: 'Security', icon: ShieldCheck },
+    { id: 'tasks', label: 'Scheduler', icon: Clock },
+    { id: 'media', label: 'Media', icon: Film },
+    { id: 'network', label: 'Network', icon: Globe },
+    { id: 'devtools', label: 'DevTools', icon: Terminal },
     { id: 'backups', label: 'Backups', icon: Archive },
-    { id: 'network', label: 'LAN & Remote', icon: Globe },
-    { id: 'api', label: 'API Explorer', icon: Terminal },
+    { id: 'users', label: 'Users', icon: Users },
+    { id: 'modules', label: 'Plugins', icon: Sliders },
   ];
 
   return (

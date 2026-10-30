@@ -30,6 +30,27 @@ AndroBase brings these devices back to life as independent, energy-efficient sel
 - **LAN and Tunnel Management**: Direct IP pairing, stylized QR connection frame, ADB USB port forwarding, and one-command SSH port forwarding for encrypted remote management.
 - **Responsive Web Console**: Touch-friendly dashboard for desktop and mobile browsers to inspect health, query database tables, insert records, upload files, and manage snapshot backups.
 
+### Home Server Management Modules
+
+AndroBase has been extended into a modular, self-hosted Home Server Management Platform with 16 core subsystems:
+
+1. **System Dashboard**: Real-time telemetry monitoring for CPU usage, memory allocation, multi-drive storage, network RX/TX bandwidth rate, uptime, OS/architecture, system temperature, battery status, and rolling historical resource graphs.
+2. **Web File Manager**: Full directory explorer with path-traversal prevention, multi-file uploads with progress tracking, folder creation, file rename, copy, move, delete, in-browser code editor, and file metadata viewer.
+3. **Application & Web Hosting Manager**: Deploy and supervise Node.js, Python, PHP, static websites, and custom daemon processes with port assignment, environment variables, live log streaming, auto-start on boot, and start/stop/restart controls.
+4. **Multi-Engine Database Hub**: Automated host detection for PostgreSQL, MySQL/MariaDB, SQLite3, and built-in pure JavaScript WAL database, with an interactive SQL query runner and schema inspector.
+5. **Docker & Container Supervisor**: Inspect and manage containers (start, stop, restart, delete, live logs) with automatic host detection and graceful degradation for non-Docker or lightweight environments.
+6. **Network Management & Diagnostics**: Real-time interface discovery, active listening ports inspection, DNS configuration, and safe ping and DNS resolution diagnostic tools.
+7. **Remote Access & SSH**: Network pairing helper with dynamic LAN URLs, QR pairing code, ADB USB forwarding, and encrypted SSH tunnel guides.
+8. **User & Permission Management (RBAC)**: Role-based access control with granular permission checks across 5 roles (Super Administrator, Administrator, Standard User, Member, Read-Only User), active session revoking, and login audit tracking.
+9. **Backup & Disaster Recovery**: Atomic point-in-time snapshots with SHA-256 integrity checksums, multi-table exports, and verification.
+10. **Process & Service Supervisor**: Live process monitoring with CPU/memory footprint, termination safeguards against killing init (PID 1) or the server process, and systemctl / Termux-service controls.
+11. **Security Centre**: Security health scorecard, audit event log, brute-force rate limiter, active session table, and open port auditor.
+12. **Task Scheduler & Automation**: Cron-style recurring task runner for automated database snapshots, system cleanup routines, and ping health monitors.
+13. **Media Server**: Multi-format media gallery with chunked audio/video streaming supporting HTTP 206 Range headers for fast seeking.
+14. **Developer Tools**: Integrated Git repository manager (status, pull, branches) and workspace configuration editor (`package.json`, `tsconfig.json`).
+15. **Plugin & Module Registry**: Modular subsystem toggles allowing administrators to enable or disable features based on device resource constraints.
+16. **Responsive UI/UX**: Lightweight, dark-mode-first dashboard optimized for both mobile phone touchscreens and desktop workstations.
+
 ---
 
 ## Architecture Overview

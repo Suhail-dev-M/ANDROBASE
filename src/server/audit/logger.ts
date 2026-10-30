@@ -20,6 +20,8 @@ export class AuditLogger {
     const fullEntry: AuditLogEntry = {
       id: generateUUID(),
       timestamp: new Date().toISOString(),
+      ip: entry.ip || '127.0.0.1',
+      userAgent: entry.userAgent || 'system/internal',
       ...entry,
     };
 
@@ -80,5 +82,9 @@ export class AuditLogger {
     } catch {
       return [];
     }
+  }
+
+  public static getRecentLogs(limit: number = 50): AuditLogEntry[] {
+    return this.getRecent(limit);
   }
 }

@@ -1,14 +1,14 @@
 /**
- * AndroBase - Open-Source Mobile Server Platform
- * Security & Authentication Engine
- * Features: PBKDF2 Password Hashing, Session Management, RBAC, Rate Limiting, Local Admin Bootstrap
+ * AndroBase - Complete Home Server Management Platform
+ * Security & Authentication Engine with Fine-Grained RBAC
+ * Features: PBKDF2 Password Hashing, Session Management, RBAC Matrix, Rate Limiting, Local Admin Bootstrap
  * SPDX-License-Identifier: Apache-2.0
  */
 
 import crypto from 'crypto';
 import { db } from '../db/portable-db.ts';
 import { config } from '../config.ts';
-import { UserRecord, SessionRecord } from '../types.ts';
+import { UserRecord, SessionRecord, ServerPermission, UserRole } from '../types.ts';
 import { AuditLogger } from '../audit/logger.ts';
 import { generateUUID } from '../utils/id.ts';
 
@@ -18,15 +18,76 @@ export interface AuthResult {
   expiresAt: string;
 }
 
+const DEFAULT_ROLE_PERMISSIONS: Record<string, ServerPermission[]> = {
+  super_admin: [
+    'system:read', 'system:power',
+    'files:read', 'files:write', 'files:delete',
+    'apps:read', 'apps:manage',
+    'db:read', 'db:write', 'db:admin',
+    'docker:read', 'docker:manage',
+    'network:read', 'network:diagnostics',
+    'processes:read', 'processes:kill',
+    'services:manage',
+    'security:read', 'security:admin',
+    'backups:read', 'backups:create', 'backups:restore',
+    'tasks:read', 'tasks:manage',
+    'media:read', 'media:manage',
+    'devtools:use',
+    'users:manage',
+  ],
+  admin: [
+    'system:read', 'system:power',
+    'files:read', 'files:write', 'files:delete',
+    'apps:read', 'apps:manage',
+    'db:read', 'db:write', 'db:admin',
+    'docker:read', 'docker:manage',
+    'network:read', 'network:diagnostics',
+    'processes:read', 'processes:kill',
+    'services:manage',
+    'security:read',
+    'backups:read', 'backups:create', 'backups:restore',
+    'tasks:read', 'tasks:manage',
+    'media:read', 'media:manage',
+    'devtools:use',
+    'users:manage',
+  ],
+  standard_user: [
+    'system:read',
+    'files:read', 'files:write',
+    'apps:read',
+    'db:read',
+    'network:read',
+    'processes:read',
+    'media:read', 'media:manage',
+  ],
+  member: [
+    'system:read',
+    'files:read', 'files:write',
+    'apps:read',
+    'db:read',
+    'network:read',
+    'processes:read',
+    'media:read', 'media:manage',
+  ],
+  readonly: [
+    'system:read',
+    'files:read',
+    'apps:read',
+    'db:read',
+    'network:read',
+    'processes:read',
+    'media:read',
+  ],
+};
+
 export class AuthService {
-  // In-memory rate limiting map: ip -> { attempts, resetAt }
+  // In-memory rate limiting map: ip -> { count, resetAt }
   private static loginAttempts: Map<string, { count: number; resetAt: number }> = new Map();
   private static MAX_ATTEMPTS = 5;
   private static LOCKOUT_MS = 15 * 60 * 1000; // 15 mins
 
   public static hashPassword(password: string, saltHex?: string): { hash: string; salt: string } {
     const salt = saltHex ? Buffer.from(saltHex, 'hex') : crypto.randomBytes(16);
-    // Profile-adaptive iterations (10,000 is optimal balance on ARMv7 mobile CPU without freezing event loop)
     const iterations = 10000;
     const derivedKey = crypto.pbkdf2Sync(password, salt, iterations, 32, 'sha256');
     return {
@@ -75,6 +136,7 @@ export class AuthService {
   public static recordFailedAttempt(ip: string): void {
     const now = Date.now();
     const entry = this.loginAttempts.get(ip);
+
     if (!entry || now > entry.resetAt) {
       this.loginAttempts.set(ip, { count: 1, resetAt: now + this.LOCKOUT_MS });
     } else {
@@ -92,10 +154,20 @@ export class AuthService {
   }
 
   public static hasAdmin(): boolean {
-    const admins = db.query<UserRecord>('_users', {
-      filters: [{ field: 'role', operator: 'eq', value: 'admin' }],
-    });
-    return admins.total > 0;
+    const users = db.query<UserRecord>('_users').data;
+    return users.some((u) => u.role === 'admin' || u.role === 'super_admin');
+  }
+
+  public static hasPermission(user: any, permission: ServerPermission): boolean {
+    if (!user) return false;
+    if (user.role === 'super_admin') return true;
+    const role = user.role || 'readonly';
+    const rolePerms = DEFAULT_ROLE_PERMISSIONS[role] || [];
+    if (rolePerms.includes(permission)) return true;
+    if (Array.isArray(user.customPermissions) && user.customPermissions.includes(permission)) {
+      return true;
+    }
+    return false;
   }
 
   public static async bootstrapAdmin(params: {
@@ -135,7 +207,7 @@ export class AuthService {
       email: (params.email || `${params.username.trim()}@local.lan`).trim().toLowerCase(),
       passwordHash: hash,
       salt,
-      role: 'admin',
+      role: 'super_admin',
       createdAt: new Date().toISOString(),
       isActive: true,
     };
@@ -159,19 +231,18 @@ export class AuthService {
       username: string;
       email: string;
       password: string;
-      role?: 'member' | 'readonly';
+      role?: UserRole;
+      customPermissions?: ServerPermission[];
     },
     createdByAdmin?: UserRecord,
     clientInfo?: { ip: string; userAgent: string }
   ): Promise<Omit<UserRecord, 'passwordHash' | 'salt'>> {
     const username = params.username.trim().toLowerCase();
-    const email = params.email.trim().toLowerCase();
+    const email = (params.email || `${username}@local.lan`).trim().toLowerCase();
 
     // Check duplicate
     const existing = db.query<UserRecord>('_users', {
-      filters: [
-        { field: 'username', operator: 'eq', value: username },
-      ],
+      filters: [{ field: 'username', operator: 'eq', value: username }],
     });
     if (existing.total > 0) {
       throw new Error(`Username "${username}" is already taken.`);
@@ -190,7 +261,8 @@ export class AuthService {
       email,
       passwordHash: hash,
       salt,
-      role: params.role || 'member',
+      role: params.role || 'standard_user',
+      customPermissions: params.customPermissions,
       createdAt: new Date().toISOString(),
       isActive: true,
     };
@@ -204,7 +276,7 @@ export class AuthService {
       ip: clientInfo?.ip || '127.0.0.1',
       userAgent: clientInfo?.userAgent || 'internal',
       status: 'success',
-      details: { createdBy: createdByAdmin?.username || 'self' },
+      details: { createdBy: createdByAdmin?.username || 'self', role: user.role },
     });
 
     const { passwordHash: _, salt: __, ...safeUser } = user;
@@ -287,7 +359,6 @@ export class AuthService {
   }
 
   public static createSession(user: UserRecord, ip: string, userAgent: string): AuthResult {
-    // Generate high-entropy 32-byte session token
     const token = crypto.randomBytes(32).toString('hex');
     const tokenHash = this.hashToken(token);
     const expiresAt = new Date(Date.now() + config.sessionTtlHours * 60 * 60 * 1000).toISOString();
@@ -343,18 +414,149 @@ export class AuthService {
     const tokenHash = this.hashToken(rawToken);
     const session = db.query<SessionRecord>('_sessions', {
       filters: [{ field: 'tokenHash', operator: 'eq', value: tokenHash }],
-    }).data[0];
+    });
 
-    if (session) {
-      db.delete('_sessions', session.id);
+    if (session.data[0]) {
+      db.delete('_sessions', session.data[0].id);
       AuditLogger.log({
         action: 'auth.logout',
-        userId: session.userId,
-        ip: session.ip,
-        userAgent: session.userAgent,
+        userId: session.data[0].userId,
+        ip: session.data[0].ip,
+        userAgent: session.data[0].userAgent,
         status: 'success',
       });
     }
+  }
+
+  public static deleteUser(userId: string, requestingUser: any): void {
+    if (!this.hasPermission(requestingUser, 'users:manage')) {
+      throw new Error('Access denied: Unauthorized to manage users.');
+    }
+    if (requestingUser.id === userId) {
+      throw new Error('Cannot delete your own active administrator account.');
+    }
+    const target = db.findById<UserRecord>('_users', userId);
+    if (!target) throw new Error('User not found.');
+    if (target.role === 'super_admin' && requestingUser.role !== 'super_admin') {
+      throw new Error('Only a super administrator can delete another super administrator.');
+    }
+
+    db.delete('_users', userId);
+    const sessions = db.query<SessionRecord>('_sessions', {
+      filters: [{ field: 'userId', operator: 'eq', value: userId }],
+    });
+    sessions.data.forEach((s) => db.delete('_sessions', s.id));
+
+    AuditLogger.log({
+      action: 'user.deleted',
+      userId,
+      username: target.username,
+      status: 'success',
+      details: { deletedBy: requestingUser.username },
+    });
+  }
+
+  public static listAllActiveSessions(): (SessionRecord & { username?: string; role?: string })[] {
+    const sessions = db.query<SessionRecord>('_sessions').data;
+    const now = Date.now();
+    return sessions
+      .filter((s) => new Date(s.expiresAt).getTime() > now)
+      .map((s) => {
+        const u = db.findById<UserRecord>('_users', s.userId);
+        return {
+          ...s,
+          username: u?.username || 'Unknown',
+          role: u?.role || 'member',
+        };
+      });
+  }
+
+  public static listActiveSessions(): (SessionRecord & { username?: string; role?: string })[] {
+    return this.listAllActiveSessions();
+  }
+
+  public static listUsers(): Omit<UserRecord, 'passwordHash' | 'salt'>[] {
+    const users = db.query<UserRecord>('_users').data;
+    return users.map(({ passwordHash, salt, ...safe }) => safe);
+  }
+
+  public static createUser(params: {
+    username: string;
+    password: string;
+    email?: string;
+    role?: UserRole;
+  }): Omit<UserRecord, 'passwordHash' | 'salt'> {
+    const cleanUser = params.username.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+    if (!cleanUser || cleanUser.length < 3) {
+      throw new Error('Username must be at least 3 characters alphanumeric.');
+    }
+    if (!params.password || params.password.length < 6) {
+      throw new Error('Password must be at least 6 characters.');
+    }
+
+    const existing = db.query<UserRecord>('_users', {
+      filters: [{ field: 'username', operator: 'eq', value: cleanUser }],
+    });
+    if (existing.total > 0) throw new Error('Username already taken.');
+
+    const { hash, salt } = this.hashPassword(params.password);
+    const user: UserRecord = {
+      id: generateUUID(),
+      username: cleanUser,
+      email: params.email?.trim() || `${cleanUser}@local.lan`,
+      passwordHash: hash,
+      salt,
+      role: params.role || 'standard_user',
+      isActive: true,
+      createdAt: new Date().toISOString(),
+    };
+
+    db.insert<UserRecord>('_users', user);
+    AuditLogger.log({
+      action: 'user.created',
+      userId: user.id,
+      username: user.username,
+      status: 'success',
+      details: { role: user.role },
+    });
+
+    const { passwordHash: _, salt: __, ...safe } = user;
+    return safe;
+  }
+
+  public static updateUserRole(userId: string, role: string, requestingUserId: string): Omit<UserRecord, 'passwordHash' | 'salt'> {
+    const validRoles: UserRole[] = ['super_admin', 'admin', 'standard_user', 'member', 'readonly'];
+    if (!validRoles.includes(role as UserRole)) {
+      throw new Error(`Invalid role. Must be one of: ${validRoles.join(', ')}`);
+    }
+
+    const target = db.findById<UserRecord>('_users', userId);
+    if (!target) throw new Error('User not found.');
+
+    const updated = db.update<UserRecord>('_users', userId, { role: role as UserRole });
+    AuditLogger.log({
+      action: 'user.role_updated',
+      userId,
+      username: target.username,
+      status: 'success',
+      details: { oldRole: target.role, newRole: role, updatedBy: requestingUserId },
+    });
+
+    const { passwordHash: _, salt: __, ...safe } = updated;
+    return safe;
+  }
+
+  public static revokeSession(sessionId: string, requestingUser?: any): boolean {
+    const s = db.findById<SessionRecord>('_sessions', sessionId);
+    if (!s) return false;
+    db.delete('_sessions', sessionId);
+    AuditLogger.log({
+      action: 'auth.session.revoked',
+      userId: s.userId,
+      status: 'success',
+      details: { sessionId, revokedBy: requestingUser?.username || 'admin' },
+    });
+    return true;
   }
 
   public static changePassword(

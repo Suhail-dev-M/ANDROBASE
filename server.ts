@@ -14,6 +14,8 @@ import { CapabilityDetector } from './src/server/detector.ts';
 import { NetworkManager } from './src/server/network/manager.ts';
 import { AuthService } from './src/server/security/auth.ts';
 import { getEmbeddedDashboardHtml } from './src/server/embedded-ui.ts';
+import { SystemMetricsCollector } from './src/server/modules/system/metrics.ts';
+import { AppHostingManager } from './src/server/modules/apps/manager.ts';
 
 // Universal directory resolution compatible with CommonJS bundles and TS loaders
 const appDir = typeof __dirname !== 'undefined' ? __dirname : process.cwd();
@@ -25,6 +27,11 @@ async function startServer() {
   // 1. Initialize embedded database engine
   await db.initialize();
   console.log('[AndroBase] Embedded Portable Database initialized.');
+
+  // 1b. Initialize subsystems
+  SystemMetricsCollector.initialize();
+  await AppHostingManager.initialize();
+  console.log('[AndroBase] System metrics collector & App hosting manager initialized.');
 
   // 2. Run capability detection
   const report = await CapabilityDetector.detect();

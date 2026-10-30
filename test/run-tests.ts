@@ -16,6 +16,10 @@ import { FileStorageService } from '../src/server/storage/file-storage.ts';
 import { BackupManager } from '../src/server/backup/manager.ts';
 import { config } from '../src/server/config.ts';
 import { generateUUID } from '../src/server/utils/id.ts';
+import { ServerFileManager } from '../src/server/modules/files/manager.ts';
+import { SystemMetricsCollector } from '../src/server/modules/system/metrics.ts';
+import { DatabaseSubsystemManager } from '../src/server/modules/databases/manager.ts';
+import { TaskScheduler } from '../src/server/modules/tasks/scheduler.ts';
 
 let passed = 0;
 let failed = 0;
@@ -182,7 +186,68 @@ async function runAllTests() {
     assert.strictEqual(verify.valid, true, 'Backup passes integrity verification');
   });
 
-  console.log('\n--- 6. REGRESSION TESTS: Mobile Build, Dependency Separation & Scripts ---');
+  console.log('\n--- 6. INTEGRATION TESTS: Home Server Modular Subsystems ---');
+  await test('ServerFileManager prevents path traversal attacks outside data directory', () => {
+    assert.throws(
+      () => ServerFileManager.resolveSafePath('../../etc/passwd'),
+      /traversal|outside|denied/i,
+      'Must reject path traversal attempts'
+    );
+    assert.throws(
+      () => ServerFileManager.resolveSafePath('/etc/shadow'),
+      /traversal|outside|denied/i,
+      'Must reject absolute paths outside data directory'
+    );
+    const safePath = ServerFileManager.resolveSafePath('my_folder/file.txt');
+    assert.ok(safePath.startsWith(ServerFileManager.getRoot()), 'Safe path within root');
+  });
+
+  await test('SystemMetricsCollector captures live metrics and rolling history', () => {
+    SystemMetricsCollector.initialize();
+    const live = SystemMetricsCollector.collectLiveMetrics();
+    assert.ok(live.cpu && typeof live.cpu.usagePercent === 'number', 'CPU usage measured');
+    assert.ok(live.memory && live.memory.totalMb > 0, 'Memory measured');
+    assert.ok(live.storage && Array.isArray(live.storage.drives), 'Storage drives detected');
+    assert.ok(live.network && live.network.bandwidth, 'Network bandwidth stats available');
+  });
+
+  await test('DatabaseSubsystemManager detects embedded WAL and host engines', async () => {
+    const engines = await DatabaseSubsystemManager.detectEngines();
+    assert.ok(engines.length >= 4, 'Must detect embedded, postgres, mysql, sqlite');
+    const embedded = engines.find((e) => e.type === 'embedded');
+    assert.ok(embedded && embedded.isAvailable, 'Embedded WAL engine must always be active');
+  });
+
+  await test('TaskScheduler schedules and executes tasks safely', async () => {
+    const scheduler = new TaskScheduler(config.dataDir);
+    const task = scheduler.createTask({
+      name: 'Test Ping Task',
+      cronExpression: '*/5 * * * *',
+      taskType: 'ping_check',
+      target: '127.0.0.1',
+      enabled: true,
+    });
+    assert.ok(task.id, 'Task ID assigned');
+    const outcome = await scheduler.executeTask(task.id);
+    assert.ok(outcome.success, 'Task execution succeeded');
+    assert.ok(outcome.log.includes('Ping check'), 'Task log contains execution result');
+    scheduler.deleteTask(task.id);
+  });
+
+  await test('Fine-Grained RBAC matrix validates roles and permissions', () => {
+    const superAdmin = { id: 'u1', username: 'root', role: 'super_admin' as const, isActive: true, createdAt: '' };
+    const stdUser = { id: 'u2', username: 'bob', role: 'standard_user' as const, isActive: true, createdAt: '' };
+    const readOnly = { id: 'u3', username: 'guest', role: 'readonly' as const, isActive: true, createdAt: '' };
+
+    assert.strictEqual(AuthService.hasPermission(superAdmin, 'security:admin'), true);
+    assert.strictEqual(AuthService.hasPermission(superAdmin, 'apps:manage'), true);
+    assert.strictEqual(AuthService.hasPermission(stdUser, 'security:admin'), false);
+    assert.strictEqual(AuthService.hasPermission(stdUser, 'files:read'), true);
+    assert.strictEqual(AuthService.hasPermission(readOnly, 'files:write'), false);
+    assert.strictEqual(AuthService.hasPermission(readOnly, 'system:read'), true);
+  });
+
+  console.log('\n--- 7. REGRESSION TESTS: Mobile Build, Dependency Separation & Scripts ---');
   await test('Runtime dependencies are separated from dev/build tools', () => {
     const pkgPath = path.resolve(process.cwd(), 'package.json');
     const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
@@ -228,6 +293,7 @@ async function runAllTests() {
   if (failed > 0) {
     process.exit(1);
   }
+  process.exit(0);
 }
 
 runAllTests().catch((err) => {

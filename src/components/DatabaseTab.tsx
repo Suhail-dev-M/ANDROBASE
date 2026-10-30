@@ -25,6 +25,14 @@ export const DatabaseTab: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'table' | 'json'>('table');
 
+  // Multi-engine & SQL console
+  const [engines, setEngines] = useState<any[]>([]);
+  const [showConsole, setShowConsole] = useState(false);
+  const [selectedEngine, setSelectedEngine] = useState('embedded');
+  const [sqlQuery, setSqlQuery] = useState('SELECT * FROM notes LIMIT 10;');
+  const [sqlResult, setSqlResult] = useState<any>(null);
+  const [queryRunning, setQueryRunning] = useState(false);
+
   // Modals state
   const [isInsertOpen, setIsInsertOpen] = useState(false);
   const [isCreateTableOpen, setIsCreateTableOpen] = useState(false);
@@ -35,6 +43,15 @@ export const DatabaseTab: React.FC = () => {
     { name: 'content', type: 'string', required: false },
   ]);
 
+  const loadEngines = async () => {
+    try {
+      const data = await ApiClient.detectDatabaseEngines();
+      setEngines(data);
+    } catch {
+      // Fallback
+    }
+  };
+
   const loadTables = async () => {
     try {
       const data = await ApiClient.listTables();
@@ -44,6 +61,24 @@ export const DatabaseTab: React.FC = () => {
       }
     } catch (err: any) {
       setError(err.message);
+    }
+  };
+
+  const handleRunQuery = async () => {
+    if (!sqlQuery.trim()) return;
+    setQueryRunning(true);
+    setError(null);
+    try {
+      const result = await ApiClient.executeDatabaseQuery(selectedEngine, sqlQuery);
+      setSqlResult(result);
+      if (selectedEngine === 'embedded') {
+        loadTables();
+        if (selectedTable) loadRecords(selectedTable, page);
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setQueryRunning(false);
     }
   };
 
@@ -70,6 +105,7 @@ export const DatabaseTab: React.FC = () => {
 
   useEffect(() => {
     loadTables();
+    loadEngines();
   }, []);
 
   useEffect(() => {
@@ -150,6 +186,123 @@ export const DatabaseTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Top Engine Detection Bar */}
+      <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-5 backdrop-blur-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <span className="p-2 rounded-xl bg-teal-500/10 text-teal-400 border border-teal-500/20">
+              <Database className="w-5 h-5" />
+            </span>
+            <div>
+              <h1 className="text-xl font-bold text-white tracking-tight">Database Management Hub</h1>
+              <p className="text-xs text-slate-400">
+                Multi-engine detection, table browser, schema designer & SQL query console
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowConsole(!showConsole)}
+              className="px-3.5 py-2 rounded-xl bg-teal-500 hover:bg-teal-600 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-sm"
+            >
+              <Code2 className="w-4 h-4" />
+              <span>{showConsole ? 'Hide SQL Console' : 'Open SQL Console'}</span>
+            </button>
+            <button
+              onClick={() => {
+                loadTables();
+                loadEngines();
+              }}
+              disabled={loading}
+              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+              title="Refresh"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+        </div>
+
+        {/* Detected Engine Badges */}
+        <div className="mt-4 pt-4 border-t border-slate-800/80 grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {engines.map((eng) => (
+            <div
+              key={eng.type}
+              className="p-3 bg-slate-950/60 rounded-xl border border-slate-800 flex flex-col justify-between"
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-200 capitalize">{eng.type}</span>
+                <span
+                  className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
+                    eng.status === 'online'
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                      : eng.status === 'offline'
+                      ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                      : 'bg-slate-800 text-slate-500'
+                  }`}
+                >
+                  {eng.status.toUpperCase()}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1 truncate font-mono">
+                {eng.version || (eng.isInstalled ? 'Installed' : 'Not installed')}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Interactive SQL Console */}
+      {showConsole && (
+        <div className="bg-slate-900 border border-teal-500/30 rounded-2xl p-5 shadow-2xl space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              <Code2 className="w-4 h-4 text-teal-400" />
+              <span>Interactive SQL & Query Console</span>
+            </h3>
+
+            <div className="flex items-center gap-2">
+              <select
+                value={selectedEngine}
+                onChange={(e) => setSelectedEngine(e.target.value)}
+                className="px-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-200 font-mono focus:outline-none focus:border-teal-500"
+              >
+                <option value="embedded">Embedded WAL DB (Pure JS)</option>
+                <option value="postgres">PostgreSQL (Local / Network)</option>
+                <option value="sqlite">SQLite3 CLI</option>
+                <option value="mysql">MySQL / MariaDB</option>
+              </select>
+
+              <button
+                onClick={handleRunQuery}
+                disabled={queryRunning}
+                className="px-4 py-1.5 rounded-xl bg-teal-500 hover:bg-teal-600 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-colors shadow-sm"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>{queryRunning ? 'Running...' : 'Execute Query'}</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="p-3 bg-slate-950 rounded-xl border border-slate-800">
+            <textarea
+              value={sqlQuery}
+              onChange={(e) => setSqlQuery(e.target.value)}
+              rows={3}
+              placeholder="Enter SQL statement (e.g. SELECT * FROM notes;)"
+              className="w-full bg-transparent text-slate-100 font-mono text-xs focus:outline-none resize-y"
+              spellCheck={false}
+            />
+          </div>
+
+          {sqlResult && (
+            <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 max-h-48 overflow-y-auto font-mono text-xs text-emerald-400 whitespace-pre-wrap">
+              {JSON.stringify(sqlResult, null, 2)}
+            </div>
+          )}
+        </div>
+      )}
+
       {error && (
         <div className="p-3.5 rounded-xl bg-rose-950/60 border border-rose-500/40 text-rose-300 text-xs flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-2">
