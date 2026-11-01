@@ -221,6 +221,9 @@ export class AuthService {
     };
 
     db.insert<UserRecord>('_users', userRecord);
+    try {
+      db.atomicSaveSync();
+    } catch {}
 
     AuditLogger.log({
       action: 'auth.admin_bootstrap_success',
@@ -276,6 +279,9 @@ export class AuthService {
     };
 
     db.insert<UserRecord>('_users', user);
+    try {
+      db.atomicSaveSync();
+    } catch {}
 
     AuditLogger.log({
       action: 'user.created',
@@ -382,6 +388,9 @@ export class AuthService {
     };
 
     db.insert<SessionRecord>('_sessions', session);
+    try {
+      db.atomicSaveSync();
+    } catch {}
 
     const { passwordHash: _, salt: __, ...safeUser } = user;
     return {
@@ -392,9 +401,12 @@ export class AuthService {
   }
 
   public static authenticateToken(rawToken: string): { user: Omit<UserRecord, 'passwordHash' | 'salt'>; session: SessionRecord } | null {
-    if (!rawToken) return null;
+    if (!rawToken || typeof rawToken !== 'string') return null;
 
-    const tokenHash = this.hashToken(rawToken);
+    const tokenClean = rawToken.trim();
+    if (!tokenClean) return null;
+
+    const tokenHash = this.hashToken(tokenClean);
     const sessionRes = db.query<SessionRecord>('_sessions', {
       filters: [{ field: 'tokenHash', operator: 'eq', value: tokenHash }],
     });
@@ -402,9 +414,13 @@ export class AuthService {
     const session = sessionRes.data[0];
     if (!session) return null;
 
-    // Check expiration
-    if (new Date(session.expiresAt).getTime() < Date.now()) {
+    // Check expiration with 5-minute clock drift allowance for mobile devices
+    const expiryTime = new Date(session.expiresAt).getTime();
+    if (expiryTime < Date.now() - 5 * 60 * 1000) {
       db.delete('_sessions', session.id);
+      try {
+        db.atomicSaveSync();
+      } catch {}
       return null;
     }
 
@@ -418,14 +434,20 @@ export class AuthService {
   }
 
   public static logout(rawToken: string): void {
-    if (!rawToken) return;
-    const tokenHash = this.hashToken(rawToken);
+    if (!rawToken || typeof rawToken !== 'string') return;
+    const tokenClean = rawToken.trim();
+    if (!tokenClean) return;
+
+    const tokenHash = this.hashToken(tokenClean);
     const session = db.query<SessionRecord>('_sessions', {
       filters: [{ field: 'tokenHash', operator: 'eq', value: tokenHash }],
     });
 
     if (session.data[0]) {
       db.delete('_sessions', session.data[0].id);
+      try {
+        db.atomicSaveSync();
+      } catch {}
       AuditLogger.log({
         action: 'auth.logout',
         userId: session.data[0].userId,

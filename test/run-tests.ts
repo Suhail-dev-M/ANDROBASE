@@ -20,6 +20,7 @@ import { ServerFileManager } from '../src/server/modules/files/manager.ts';
 import { SystemMetricsCollector } from '../src/server/modules/system/metrics.ts';
 import { DatabaseSubsystemManager } from '../src/server/modules/databases/manager.ts';
 import { TaskScheduler } from '../src/server/modules/tasks/scheduler.ts';
+import { extractTokenFromRequest } from '../src/server/api/router.ts';
 
 let passed = 0;
 let failed = 0;
@@ -185,6 +186,45 @@ async function runAllTests() {
     // Logout invalidates session
     AuthService.logout(session.token);
     assert.strictEqual(AuthService.authenticateToken(session.token), null, 'Logged out token is rejected');
+  });
+
+  await test('Multi-channel token extraction handles Bearer, lowercase bearer, x-auth-token, query params, and cookies', () => {
+    const testToken = 'abc123xyz789tokenstring456';
+
+    // 1. Standard Bearer
+    const req1 = { headers: { authorization: `Bearer ${testToken}` }, query: {} } as any;
+    assert.strictEqual(extractTokenFromRequest(req1), testToken);
+
+    // 2. Lowercase bearer (common in mobile WebViews and proxies)
+    const req2 = { headers: { authorization: `bearer ${testToken}` }, query: {} } as any;
+    assert.strictEqual(extractTokenFromRequest(req2), testToken);
+
+    // 3. x-auth-token header
+    const req3 = { headers: { 'x-auth-token': testToken }, query: {} } as any;
+    assert.strictEqual(extractTokenFromRequest(req3), testToken);
+
+    // 4. x-access-token header
+    const req4 = { headers: { 'x-access-token': testToken }, query: {} } as any;
+    assert.strictEqual(extractTokenFromRequest(req4), testToken);
+
+    // 5. Query parameter (?token=...)
+    const req5 = { headers: {}, query: { token: testToken } } as any;
+    assert.strictEqual(extractTokenFromRequest(req5), testToken);
+
+    // 6. Cookie (androbase_token=...)
+    const req6 = { headers: { cookie: `other=123; androbase_token=${testToken}; foo=bar` }, query: {} } as any;
+    assert.strictEqual(extractTokenFromRequest(req6), testToken);
+  });
+
+  await test('Profile A activates maximum supportable features without authentication loss', () => {
+    const { PROFILES } = require('../src/server/detector.ts');
+    const profileA = PROFILES['profile_a'];
+    assert.ok(profileA, 'Profile A exists');
+    assert.ok(profileA.enabledFeatures.length >= 12, 'Profile A must support maximum home server features');
+    assert.ok(profileA.enabledFeatures.includes('Role-Based Access Control (RBAC)'));
+    assert.ok(profileA.enabledFeatures.includes('Embedded File-Backed WAL Database'));
+    assert.ok(profileA.enabledFeatures.includes('Web File Manager & In-Browser Code Editor'));
+    assert.ok(profileA.enabledFeatures.includes('Application & Web Hosting Manager'));
   });
 
   console.log('\n--- 4. SECURITY TESTS: Path Traversal & Executable Upload Guards ---');

@@ -116,6 +116,8 @@ export const ApiExplorerTab: React.FC = () => {
       const token = ApiClient.getToken();
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
+        headers['x-auth-token'] = token;
+        headers['x-access-token'] = token;
       }
 
       const options: RequestInit = {

@@ -32,52 +32,115 @@ const TOKEN_KEY = 'androbase_auth_token';
 const USER_KEY = 'androbase_auth_user';
 
 export class ApiClient {
+  private static _memoryToken: string | null = null;
+  private static _memoryUser: User | null = null;
+
   public static getToken(): string | null {
-    return (
-      sessionStorage.getItem(TOKEN_KEY) ||
-      sessionStorage.getItem('androbase_jwt') ||
-      localStorage.getItem(TOKEN_KEY) ||
-      localStorage.getItem('androbase_jwt')
-    );
+    if (this._memoryToken) return this._memoryToken;
+
+    try {
+      const fromSession = sessionStorage.getItem(TOKEN_KEY) || sessionStorage.getItem('androbase_jwt');
+      if (fromSession) {
+        this._memoryToken = fromSession;
+        return fromSession;
+      }
+    } catch {}
+
+    try {
+      const fromLocal = localStorage.getItem(TOKEN_KEY) || localStorage.getItem('androbase_jwt');
+      if (fromLocal) {
+        this._memoryToken = fromLocal;
+        return fromLocal;
+      }
+    } catch {}
+
+    if (typeof document !== 'undefined' && document.cookie) {
+      const match = document.cookie.match(/(?:^|;\s*)androbase_token=([^;]+)/);
+      if (match) {
+        try {
+          const val = decodeURIComponent(match[1]);
+          this._memoryToken = val;
+          return val;
+        } catch {}
+      }
+    }
+
+    return null;
   }
 
   public static setAuth(token: string, user: User, remember: boolean = false): void {
-    if (remember) {
-      localStorage.setItem(TOKEN_KEY, token);
-      localStorage.setItem('androbase_jwt', token);
-      localStorage.setItem(USER_KEY, JSON.stringify(user));
-      sessionStorage.removeItem(TOKEN_KEY);
-      sessionStorage.removeItem(USER_KEY);
-    } else {
-      // Per-visit session: strictly cleared when browser tab/window is closed
+    this._memoryToken = token;
+    this._memoryUser = user;
+
+    try {
       sessionStorage.setItem(TOKEN_KEY, token);
       sessionStorage.setItem('androbase_jwt', token);
       sessionStorage.setItem(USER_KEY, JSON.stringify(user));
-      localStorage.removeItem(TOKEN_KEY);
-      localStorage.removeItem('androbase_jwt');
-      localStorage.removeItem(USER_KEY);
-    }
+    } catch {}
+
+    try {
+      if (remember) {
+        localStorage.setItem(TOKEN_KEY, token);
+        localStorage.setItem('androbase_jwt', token);
+        localStorage.setItem(USER_KEY, JSON.stringify(user));
+        localStorage.setItem('androbase_remember_me', 'true');
+      } else {
+        localStorage.removeItem(TOKEN_KEY);
+        localStorage.removeItem('androbase_jwt');
+        localStorage.removeItem(USER_KEY);
+        localStorage.removeItem('androbase_remember_me');
+      }
+    } catch {}
+
+    try {
+      if (typeof document !== 'undefined') {
+        const maxAge = remember ? 72 * 3600 : '';
+        document.cookie = `androbase_token=${encodeURIComponent(token)}; path=/; samesite=lax${maxAge ? `; max-age=${maxAge}` : ''}`;
+      }
+    } catch {}
+
     window.dispatchEvent(new Event('androbase_auth_changed'));
   }
 
   public static clearAuth(): void {
-    sessionStorage.removeItem(TOKEN_KEY);
-    sessionStorage.removeItem('androbase_jwt');
-    sessionStorage.removeItem(USER_KEY);
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem('androbase_jwt');
-    localStorage.removeItem(USER_KEY);
+    this._memoryToken = null;
+    this._memoryUser = null;
+
+    try {
+      sessionStorage.removeItem(TOKEN_KEY);
+      sessionStorage.removeItem('androbase_jwt');
+      sessionStorage.removeItem(USER_KEY);
+    } catch {}
+
+    try {
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem('androbase_jwt');
+      localStorage.removeItem(USER_KEY);
+      localStorage.removeItem('androbase_remember_me');
+    } catch {}
+
+    try {
+      if (typeof document !== 'undefined') {
+        document.cookie = 'androbase_token=; path=/; max-age=0; samesite=lax';
+      }
+    } catch {}
+
     window.dispatchEvent(new Event('androbase_auth_changed'));
   }
 
   public static getStoredUser(): User | null {
-    const raw = sessionStorage.getItem(USER_KEY) || localStorage.getItem(USER_KEY);
-    if (!raw) return null;
+    if (this._memoryUser) return this._memoryUser;
+
     try {
-      return JSON.parse(raw);
-    } catch {
-      return null;
-    }
+      const raw = sessionStorage.getItem(USER_KEY) || localStorage.getItem(USER_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        this._memoryUser = parsed;
+        return parsed;
+      }
+    } catch {}
+
+    return null;
   }
 
   private static async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -88,6 +151,8 @@ export class ApiClient {
     const token = this.getToken();
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
+      headers['x-auth-token'] = token;
+      headers['x-access-token'] = token;
     }
 
     if (!(options.body instanceof FormData) && !headers['Content-Type']) {
@@ -99,10 +164,11 @@ export class ApiClient {
       headers,
     });
 
-    if (res.status === 401) {
+    // ONLY clear credentials if the authoritative /auth/me verification endpoint returns 401
+    // Never clear credentials for normal 401s or permission errors on sub-endpoints
+    if (res.status === 401 && endpoint === '/auth/me') {
       if (token) {
         this.clearAuth();
-        window.dispatchEvent(new Event('androbase_auth_changed'));
       }
     }
 

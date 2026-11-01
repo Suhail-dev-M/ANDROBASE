@@ -598,12 +598,33 @@ export function getEmbeddedDashboardHtml(): string {
   </div>
 
   <script>
-    let authToken = localStorage.getItem('androbase_auth_token') || localStorage.getItem('androbase_jwt') || '';
+    function getStoredToken() {
+      try {
+        const s = sessionStorage.getItem('androbase_auth_token') || sessionStorage.getItem('androbase_jwt');
+        if (s) return s;
+      } catch(e) {}
+      try {
+        const l = localStorage.getItem('androbase_auth_token') || localStorage.getItem('androbase_jwt');
+        if (l) return l;
+      } catch(e) {}
+      if (document.cookie) {
+        const m = document.cookie.match(/(?:^|;\s*)androbase_token=([^;]+)/);
+        if (m) return decodeURIComponent(m[1]);
+      }
+      return '';
+    }
+
+    let authToken = getStoredToken();
     let currentUser = null;
 
     function getHeaders() {
       const h = { 'Content-Type': 'application/json' };
-      if (authToken) h['Authorization'] = 'Bearer ' + authToken;
+      authToken = getStoredToken();
+      if (authToken) {
+        h['Authorization'] = 'Bearer ' + authToken;
+        h['x-auth-token'] = authToken;
+        h['x-access-token'] = authToken;
+      }
       return h;
     }
 

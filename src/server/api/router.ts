@@ -50,21 +50,56 @@ export interface AuthenticatedRequest extends Request {
   session?: any;
 }
 
-const requireAuth = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  let token: string | undefined;
-
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    token = authHeader.substring(7).trim();
-  } else if (req.headers['x-auth-token']) {
-    token = String(req.headers['x-auth-token']).trim();
-  } else if (req.headers['x-access-token']) {
-    token = String(req.headers['x-access-token']).trim();
-  } else if (req.query.token) {
-    token = String(req.query.token).trim();
-  } else if (req.query.auth) {
-    token = String(req.query.auth).trim();
+export const extractTokenFromRequest = (req: Request): string | undefined => {
+  // 1. Authorization header (case-insensitive Bearer / Token / raw hex token)
+  const authHeader = req.headers.authorization || (req.headers as any)['Authorization'];
+  if (authHeader && typeof authHeader === 'string') {
+    const trimmed = authHeader.trim();
+    const bearerMatch = trimmed.match(/^(?:Bearer|Token)\s+(.+)$/i);
+    if (bearerMatch) {
+      return bearerMatch[1].trim();
+    }
+    // Direct raw token in Authorization header
+    if (!trimmed.includes(' ') && trimmed.length >= 16) {
+      return trimmed;
+    }
   }
+
+  // 2. Custom mobile/webview headers
+  for (const h of ['x-auth-token', 'x-access-token', 'x-token', 'x-androbase-token']) {
+    const val = req.headers[h];
+    if (val && typeof val === 'string' && val.trim()) {
+      return val.trim();
+    }
+  }
+
+  // 3. Query parameter (useful for media streaming, download links, img tags)
+  const qToken = (req.query?.token || req.query?.auth || req.query?.access_token) as string | undefined;
+  if (qToken && typeof qToken === 'string' && qToken.trim()) {
+    return qToken.trim();
+  }
+
+  // 4. Cookies (androbase_token, androbase_jwt, token)
+  const cookieHeader = req.headers.cookie;
+  if (cookieHeader && typeof cookieHeader === 'string') {
+    const parts = cookieHeader.split(';');
+    for (const part of parts) {
+      const [key, val] = part.trim().split('=');
+      if (['androbase_token', 'androbase_jwt', 'token', 'auth_token'].includes(key?.trim())) {
+        try {
+          return decodeURIComponent(val?.trim() || '');
+        } catch {
+          return val?.trim();
+        }
+      }
+    }
+  }
+
+  return undefined;
+};
+
+const requireAuth = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  const token = extractTokenFromRequest(req);
 
   if (token) {
     const auth = AuthService.authenticateToken(token);
@@ -73,7 +108,11 @@ const requireAuth = (req: AuthenticatedRequest, res: Response, next: NextFunctio
       req.session = auth.session;
       return next();
     }
-    return res.status(401).json({ error: 'Invalid or expired session token.' });
+    return res.status(401).json({
+      error: 'Invalid or expired session token.',
+      requiresLogin: true,
+      tokenInvalid: true,
+    });
   }
 
   // Check if system has any admin configured yet
@@ -194,6 +233,11 @@ apiRouter.post('/auth/bootstrap', async (req: Request, res: Response) => {
       userAgent,
     });
 
+    res.setHeader(
+      'Set-Cookie',
+      `androbase_token=${encodeURIComponent(result.token)}; Path=/; SameSite=Lax; Max-Age=${config.sessionTtlHours * 3600}`
+    );
+
     res.status(201).json({
       message: 'Administrator account successfully configured.',
       ...result,
@@ -224,6 +268,12 @@ apiRouter.post('/auth/login', async (req: Request, res: Response) => {
     const userAgent = req.headers['user-agent'] || 'unknown';
 
     const result = await AuthService.login(identifier, password, ip, userAgent);
+
+    res.setHeader(
+      'Set-Cookie',
+      `androbase_token=${encodeURIComponent(result.token)}; Path=/; SameSite=Lax; Max-Age=${config.sessionTtlHours * 3600}`
+    );
+
     res.json(result);
   } catch (err: any) {
     res.status(401).json({ error: err.message });
@@ -231,11 +281,11 @@ apiRouter.post('/auth/login', async (req: Request, res: Response) => {
 });
 
 apiRouter.post('/auth/logout', (req: Request, res: Response) => {
-  const authHeader = req.headers.authorization;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    const token = authHeader.substring(7).trim();
+  const token = extractTokenFromRequest(req);
+  if (token) {
     AuthService.logout(token);
   }
+  res.setHeader('Set-Cookie', 'androbase_token=; Path=/; SameSite=Lax; Max-Age=0');
   res.json({ message: 'Logged out successfully.' });
 });
 
@@ -427,13 +477,19 @@ apiRouter.post('/files', requireAuth, upload.single('file'), async (req: Authent
   }
 });
 
-apiRouter.get('/files/:id', requireAuth, (req: AuthenticatedRequest, res: Response) => {
+apiRouter.get('/files/:id', requireAuth, (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  if (['list', 'folder', 'rename', 'copy', 'move', 'delete', 'read', 'write', 'upload', 'download'].includes(req.params.id)) {
+    return next();
+  }
   const record = FileStorageService.getFileRecord(req.params.id);
   if (!record) return res.status(404).json({ error: 'File record not found.' });
   res.json(record);
 });
 
-apiRouter.get('/files/:id/download', requireAuth, (req: AuthenticatedRequest, res: Response) => {
+apiRouter.get('/files/:id/download', requireAuth, (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  if (['list', 'download', 'read'].includes(req.params.id)) {
+    return next();
+  }
   const record = FileStorageService.getFileRecord(req.params.id);
   if (!record) return res.status(404).json({ error: 'File not found.' });
 
@@ -447,7 +503,10 @@ apiRouter.get('/files/:id/download', requireAuth, (req: AuthenticatedRequest, re
   res.sendFile(filePath);
 });
 
-apiRouter.delete('/files/:id', requireAuth, (req: AuthenticatedRequest, res: Response) => {
+apiRouter.delete('/files/:id', requireAuth, (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  if (['delete', 'folder', 'list'].includes(req.params.id)) {
+    return next();
+  }
   try {
     const success = FileStorageService.deleteFile(req.params.id, req.user!);
     if (!success) return res.status(404).json({ error: 'File not found.' });

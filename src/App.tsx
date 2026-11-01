@@ -95,19 +95,24 @@ export default function App() {
 
     // Verify existing token on initial load
     const existingToken = ApiClient.getToken();
-    if (existingToken) {
+    const storedUser = ApiClient.getStoredUser();
+
+    if (existingToken && storedUser) {
+      setCurrentUser(storedUser);
+      // Asynchronously verify session freshness with server
       ApiClient.getMe()
         .then((res) => {
           if (res?.user) {
             setCurrentUser(res.user);
-          } else {
+          }
+        })
+        .catch((err: any) => {
+          // Only clear if server explicitly rejected the token
+          const msg = err?.message || '';
+          if (msg.includes('expired') || msg.includes('Invalid') || msg.includes('Authentication required')) {
             ApiClient.clearAuth();
             setCurrentUser(null);
           }
-        })
-        .catch(() => {
-          ApiClient.clearAuth();
-          setCurrentUser(null);
         });
     } else {
       setCurrentUser(null);
@@ -121,18 +126,25 @@ export default function App() {
       }
       fetchAuditLogs();
     };
-    window.addEventListener('androbase_auth_changed', handleAuthChange);
 
-    const interval = setInterval(() => {
-      fetchStatus();
-      if (currentUser?.role === 'admin' || currentUser?.role === 'super_admin') fetchAuditLogs();
-    }, 10000);
+    window.addEventListener('androbase_auth_changed', handleAuthChange);
 
     return () => {
       window.removeEventListener('androbase_auth_changed', handleAuthChange);
-      clearInterval(interval);
     };
-  }, [currentUser]);
+  }, []);
+
+  // Periodic background telemetry & audit log refresh
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchStatus();
+      if (currentUser?.role === 'admin' || currentUser?.role === 'super_admin') {
+        fetchAuditLogs();
+      }
+    }, 12000);
+
+    return () => clearInterval(interval);
+  }, [currentUser?.role]);
 
   const handleLogout = async () => {
     await ApiClient.logout();
