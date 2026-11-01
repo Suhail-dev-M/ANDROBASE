@@ -227,6 +227,49 @@ async function runAllTests() {
     assert.ok(profileA.enabledFeatures.includes('Application & Web Hosting Manager'));
   });
 
+  await test('CapabilityDetector dynamically supports manual profile overrides (Profile A, B, C)', async () => {
+    CapabilityDetector.setProfileOverride('profile_a');
+    let report = await CapabilityDetector.detect();
+    assert.strictEqual(report.detectedProfile, 'profile_a', 'Override to profile_a works');
+
+    CapabilityDetector.setProfileOverride('profile_c');
+    report = await CapabilityDetector.detect();
+    assert.strictEqual(report.detectedProfile, 'profile_c', 'Override to profile_c works');
+
+    CapabilityDetector.setProfileOverride(null); // Reset
+  });
+
+  await test('FileStorageService finds records by id, storageName, or originalName for download resilience', async () => {
+    const admin = AuthService.getPrimaryAdmin();
+    assert.ok(admin, 'Primary admin exists');
+
+    const uniqueName = `test-download-resilience-${Date.now()}.txt`;
+    const testBuf = Buffer.from('hello androbase storage file content');
+    const stored = await FileStorageService.storeFile({
+      originalName: uniqueName,
+      mimeType: 'text/plain',
+      buffer: testBuf,
+      user: admin as any,
+    });
+
+    assert.ok(stored.id, 'Stored file has id');
+
+    // 1. Direct ID lookup
+    const byId = FileStorageService.getFileRecord(stored.id);
+    assert.ok(byId, 'Found by ID');
+    assert.strictEqual(byId?.id, stored.id);
+
+    // 2. StorageName lookup
+    const byStorageName = FileStorageService.getFileRecord(stored.storageName);
+    assert.ok(byStorageName, 'Found by storageName');
+    assert.strictEqual(byStorageName?.id, stored.id);
+
+    // 3. OriginalName lookup
+    const byOriginalName = FileStorageService.getFileRecord(uniqueName);
+    assert.ok(byOriginalName, 'Found by originalName');
+    assert.strictEqual(byOriginalName?.id, stored.id);
+  });
+
   await test('Authenticated download links succeed via query parameter token (?token=...)', () => {
     const admin = AuthService.getPrimaryAdmin();
     assert.ok(admin, 'Primary admin exists');

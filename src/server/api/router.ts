@@ -545,17 +545,21 @@ apiRouter.post('/backup/restore', requireAdmin, (req: AuthenticatedRequest, res:
   }
 });
 
-apiRouter.get('/backup/download/:filename', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
+const handleBackupDownload = (req: AuthenticatedRequest, res: Response) => {
   try {
     const filename = req.params.filename;
     const filePath = BackupManager.getBackupFilePath(filename);
     res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Length');
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.sendFile(filePath);
   } catch (err: any) {
     res.status(404).json({ error: err.message });
   }
-});
+};
+
+apiRouter.get('/backup/download/:filename', requireAdmin, handleBackupDownload);
+apiRouter.get('/backups/download/:filename', requireAdmin, handleBackupDownload);
 
 // ----------------------------------------------------
 // 7. Audit Logs & System Diagnostics
@@ -708,16 +712,36 @@ apiRouter.delete('/db/:table/records/:id', requireAuth, (req: AuthenticatedReque
   }
 });
 
-apiRouter.get('/storage/:id', requireAuth, (req: AuthenticatedRequest, res: Response) => {
-  const record = FileStorageService.getFileRecord(req.params.id);
+const handleStorageDownload = (req: AuthenticatedRequest, res: Response) => {
+  const fileId = req.params.id;
+  if (!fileId || ['files', 'list'].includes(fileId)) {
+    const files = FileStorageService.listFiles(req.user);
+    return res.json(files);
+  }
+  const record = FileStorageService.getFileRecord(fileId);
   if (!record) return res.status(404).json({ error: 'File record not found.' });
   const filePath = FileStorageService.getFilePath(record);
   if (!fs.existsSync(filePath)) {
     return res.status(404).json({ error: 'Physical file missing from storage.' });
   }
   res.setHeader('Content-Type', record.mimeType);
+  res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Length');
   res.setHeader('Content-Disposition', `attachment; filename="${record.originalName}"`);
   res.sendFile(filePath);
+};
+
+apiRouter.get('/storage/:id', requireAuth, handleStorageDownload);
+apiRouter.get('/storage/download/:id', requireAuth, handleStorageDownload);
+apiRouter.get('/storage/files/:id/download', requireAuth, handleStorageDownload);
+
+apiRouter.post('/system/profile', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
+  const { profile } = req.body;
+  if (profile && !['profile_a', 'profile_b', 'profile_c', 'auto'].includes(profile)) {
+    return res.status(400).json({ error: 'Invalid profile. Choose profile_a, profile_b, profile_c, or auto.' });
+  }
+  CapabilityDetector.setProfileOverride(profile === 'auto' ? null : (profile as any));
+  const report = await CapabilityDetector.detect();
+  res.json({ message: `Active hardware profile updated to ${report.profileDetails.name}`, profile: report.detectedProfile, report });
 });
 
 apiRouter.get('/backups', requireAdmin, (req: AuthenticatedRequest, res: Response) => {

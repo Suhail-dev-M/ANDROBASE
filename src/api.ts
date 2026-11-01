@@ -159,7 +159,13 @@ export class ApiClient {
       headers['Content-Type'] = 'application/json';
     }
 
-    const res = await fetch(`/api/v1${endpoint}`, {
+    let url = `/api/v1${endpoint}`;
+    if (token && !endpoint.includes('token=')) {
+      const sep = url.includes('?') ? '&' : '?';
+      url = `${url}${sep}token=${encodeURIComponent(token)}`;
+    }
+
+    const res = await fetch(url, {
       ...options,
       headers,
     });

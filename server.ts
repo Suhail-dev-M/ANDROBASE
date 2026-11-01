@@ -58,9 +58,14 @@ async function startServer() {
   // Fallback for /api health ping
   app.get('/api/health', (req, res) => res.redirect('/api/v1/health'));
 
+  // Dedicated routes for Profile A (Embedded Lightweight Mobile Console)
+  app.get(['/profile-a', '/embedded', '/lite'], (req: Request, res: Response) => {
+    res.status(200).type('html').send(getEmbeddedDashboardHtml());
+  });
+
   // 6. Static production serving vs optional Vite middleware in development
   const distPath = path.resolve(appDir, 'dist');
-  const isProd = process.env.NODE_ENV === 'production' || fs.existsSync(path.join(distPath, 'index.html'));
+  const isProd = process.env.NODE_ENV === 'production';
 
   if (isProd) {
     if (fs.existsSync(distPath)) {

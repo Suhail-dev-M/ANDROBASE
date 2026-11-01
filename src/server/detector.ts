@@ -95,6 +95,7 @@ export const PROFILES: Record<CompatibilityProfile, ProfileMetadata> = {
 
 export class CapabilityDetector {
   private static cachedReport: CompatibilityReport | null = null;
+  private static activeProfileOverride: CompatibilityProfile | null = null;
 
   public static async detect(): Promise<CompatibilityReport> {
     const checks: CapabilityCheck[] = [];
@@ -287,10 +288,14 @@ export class CapabilityDetector {
       critical: false,
     });
 
-    // Determine Compatibility Profile based on strict capability logic
+    // Determine Compatibility Profile based on strict capability logic or manual simulator override
     let detectedProfile: CompatibilityProfile = 'profile_b';
 
-    if (totalMemMb < 700 || isArmv7 || (androidApiLevel && androidApiLevel < 26)) {
+    if (this.activeProfileOverride) {
+      detectedProfile = this.activeProfileOverride;
+    } else if (process.env.ANDROBASE_PROFILE && ['profile_a', 'profile_b', 'profile_c'].includes(process.env.ANDROBASE_PROFILE)) {
+      detectedProfile = process.env.ANDROBASE_PROFILE as CompatibilityProfile;
+    } else if (totalMemMb < 700 || isArmv7 || (androidApiLevel && androidApiLevel < 26)) {
       detectedProfile = 'profile_a';
     } else if (totalMemMb >= 2048 && is64Bit && (!androidApiLevel || androidApiLevel >= 28)) {
       detectedProfile = 'profile_c';
@@ -339,6 +344,15 @@ export class CapabilityDetector {
 
   public static getCached(): CompatibilityReport | null {
     return CapabilityDetector.cachedReport;
+  }
+
+  public static setProfileOverride(profile: CompatibilityProfile | null): void {
+    CapabilityDetector.activeProfileOverride = profile;
+    CapabilityDetector.cachedReport = null;
+  }
+
+  public static getProfileOverride(): CompatibilityProfile | null {
+    return CapabilityDetector.activeProfileOverride;
   }
 }
 

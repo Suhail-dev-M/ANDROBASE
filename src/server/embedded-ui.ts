@@ -1,7 +1,7 @@
 /**
  * AndroBase - Open-Source Mobile Server Platform
- * Self-Contained Embedded Web Management Console
- * Cute, Modern & Production-Quality Fallback GUI for Android Smartphones
+ * Self-Contained Embedded Web Management Console (Profile A & Low-Resource Hosts)
+ * Maximum Supportable Features Suite: Telemetry, Relational WAL DB, Storage, File Manager, Backups, Diagnostics, API Sandbox
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -11,7 +11,7 @@ export function getEmbeddedDashboardHtml(): string {
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AndroBase — Mobile Cloud Server</title>
+  <title>AndroBase — Mobile Cloud Server (Profile A Console)</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2310b981' stroke-width='2'><rect width='14' height='20' x='5' y='2' rx='2'/><path d='M12 18h.01'/></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -140,7 +140,7 @@ export function getEmbeddedDashboardHtml(): string {
       gap: 0.4rem;
     }
     .cute-card .val {
-      font-size: 1.4rem;
+      font-size: 1.35rem;
       font-weight: 800;
       color: #fff;
       font-family: 'JetBrains Mono', monospace;
@@ -158,96 +158,91 @@ export function getEmbeddedDashboardHtml(): string {
       padding: 0.5rem 1rem;
       border-radius: 12px;
       font-size: 0.85rem;
-      font-weight: 700;
+      font-weight: 600;
       cursor: pointer;
+      transition: all 0.2s;
       border: none;
-      transition: all 0.15s;
-    }
-    .btn:active {
-      transform: scale(0.97);
+      text-decoration: none;
+      font-family: inherit;
     }
     .btn-primary {
-      background: var(--emerald);
-      color: #042f2e;
-      box-shadow: 0 2px 10px rgba(16,185,129,0.25);
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
     }
     .btn-primary:hover {
-      background: #34d399;
+      background: linear-gradient(135deg, #059669, #047857);
     }
     .btn-secondary {
-      background: rgba(30, 41, 59, 0.8);
-      color: var(--text);
-      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #e2e8f0;
     }
     .btn-secondary:hover {
-      background: rgba(51, 65, 85, 0.9);
-      border-color: rgba(255,255,255,0.2);
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
     }
     .badge {
       display: inline-flex;
       align-items: center;
-      gap: 0.35rem;
-      padding: 0.25rem 0.65rem;
-      border-radius: 9999px;
+      gap: 0.3rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 20px;
       font-size: 0.75rem;
       font-weight: 700;
       font-family: 'JetBrains Mono', monospace;
     }
     .badge-success {
       background: rgba(16, 185, 129, 0.15);
-      color: #34d399;
       border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
     }
     .badge-warning {
       background: rgba(245, 158, 11, 0.15);
-      color: #fbbf24;
       border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #fbbf24;
     }
-    .badge-cyan {
+    .badge-info {
       background: rgba(6, 182, 212, 0.15);
-      color: #22d3ee;
       border: 1px solid rgba(6, 182, 212, 0.3);
+      color: #38bdf8;
     }
     .banner {
-      background: linear-gradient(90deg, rgba(16,185,129,0.12), rgba(6,182,212,0.08));
-      border: 1px solid rgba(16,185,129,0.3);
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.25);
       border-radius: 14px;
-      padding: 1.1rem 1.35rem;
+      padding: 1rem 1.25rem;
       margin-bottom: 1.5rem;
       display: flex;
       justify-content: space-between;
       align-items: center;
       flex-wrap: wrap;
-      gap: 1rem;
+      gap: 0.75rem;
     }
     table {
       width: 100%;
       border-collapse: collapse;
-      text-align: left;
       font-size: 0.85rem;
     }
-    th {
-      background: rgba(13, 21, 38, 0.8);
+    th, td {
       padding: 0.75rem 1rem;
+      text-align: left;
       border-bottom: 1px solid var(--card-border);
+    }
+    th {
       color: var(--text-muted);
-      font-weight: 700;
-      font-size: 0.75rem;
+      font-weight: 600;
       text-transform: uppercase;
+      font-size: 0.75rem;
       letter-spacing: 0.05em;
     }
-    td {
-      padding: 0.75rem 1rem;
-      border-bottom: 1px solid rgba(255,255,255,0.04);
-      color: var(--text);
-    }
-    tr:hover td {
-      background: rgba(255,255,255,0.03);
+    tbody tr:hover {
+      background: rgba(255, 255, 255, 0.02);
     }
     .modal-backdrop {
       position: fixed;
       inset: 0;
-      background: rgba(4, 7, 14, 0.8);
+      background: rgba(4, 7, 14, 0.85);
       backdrop-filter: blur(8px);
       display: flex;
       align-items: center;
@@ -274,7 +269,7 @@ export function getEmbeddedDashboardHtml(): string {
       margin-bottom: 0.35rem;
       color: var(--text-muted);
     }
-    .input-group input {
+    .input-group input, .input-group select, .input-group textarea {
       width: 100%;
       background: #090d16;
       border: 1px solid rgba(255,255,255,0.12);
@@ -285,7 +280,7 @@ export function getEmbeddedDashboardHtml(): string {
       font-family: inherit;
       transition: border-color 0.15s;
     }
-    .input-group input:focus {
+    .input-group input:focus, .input-group select:focus, .input-group textarea:focus {
       outline: none;
       border-color: var(--emerald);
     }
@@ -305,7 +300,7 @@ export function getEmbeddedDashboardHtml(): string {
     <div class="brand">
       <div class="brand-icon">🤖</div>
       <span>ANDROBASE</span>
-      <span class="badge badge-success" id="hdr-profile">Profile C</span>
+      <span class="badge badge-success" id="hdr-profile">Profile A</span>
     </div>
     <div style="display:flex; align-items:center; gap:0.75rem;">
       <button class="btn btn-primary" id="btn-setup-admin" onclick="openBootstrapModal()">🔑 Set Up Admin</button>
@@ -318,12 +313,26 @@ export function getEmbeddedDashboardHtml(): string {
     <button class="tab-btn active" onclick="switchTab('overview')">✨ Overview</button>
     <button class="tab-btn" onclick="switchTab('database')">📦 Database</button>
     <button class="tab-btn" onclick="switchTab('storage')">📁 Storage</button>
+    <button class="tab-btn" onclick="switchTab('filemanager')">🗂️ File Manager</button>
+    <button class="tab-btn" onclick="switchTab('apps')">🚀 Apps &amp; Hosting</button>
     <button class="tab-btn" onclick="switchTab('diagnostics')">⚡ Diagnostics</button>
     <button class="tab-btn" onclick="switchTab('backups')">🛡️ Backups</button>
     <button class="tab-btn" onclick="switchTab('api')">💻 API Sandbox</button>
   </nav>
 
   <main>
+    <!-- Server Locked Banner (Every visit requirement) -->
+    <div id="lock-screen-card" class="cute-card hidden" style="border-color:rgba(245,158,11,0.4); background:rgba(245,158,11,0.06); margin-bottom:1.5rem; text-align:center; padding:1.75rem 1.25rem;">
+      <div style="font-size:2.2rem; margin-bottom:0.5rem;">🔒</div>
+      <h2 style="font-size:1.2rem; font-weight:800; color:#f8fafc; margin-bottom:0.35rem;">AndroBase Access Locked</h2>
+      <p style="font-size:0.85rem; color:var(--text-muted); max-width:480px; margin:0 auto 1.25rem; line-height:1.5;">Administrator authentication is required on every visit. Sign in below to unlock database tables, file downloads, and backups.</p>
+      <form onsubmit="submitQuickLogin(event)" style="display:flex; flex-wrap:wrap; gap:0.6rem; justify-content:center; max-width:480px; margin:0 auto;">
+        <input type="text" id="ql-user" required placeholder="Username or email" style="flex:1; min-width:130px; background:#090d16; border:1px solid rgba(255,255,255,0.15); border-radius:10px; padding:0.55rem 0.85rem; color:#fff; font-size:0.85rem;" />
+        <input type="password" id="ql-pass" required placeholder="Password" style="flex:1; min-width:130px; background:#090d16; border:1px solid rgba(255,255,255,0.15); border-radius:10px; padding:0.55rem 0.85rem; color:#fff; font-size:0.85rem;" />
+        <button type="submit" class="btn btn-primary" id="btn-quick-login">Sign In &amp; Unlock</button>
+      </form>
+    </div>
+
     <!-- Admin Setup Alert Banner -->
     <div id="bootstrap-banner" class="banner hidden">
       <div>
@@ -348,9 +357,9 @@ export function getEmbeddedDashboardHtml(): string {
           <div class="sub" id="stat-uptime">Uptime: 0m</div>
         </div>
         <div class="cute-card">
-          <h3>Device Profile</h3>
-          <div class="val" style="color:#38bdf8;" id="stat-profile">Profile C</div>
-          <div class="sub" id="stat-tier">Android 12+ / 64-bit</div>
+          <h3>Active Profile</h3>
+          <div class="val" style="color:#38bdf8;" id="stat-profile">Profile A</div>
+          <div class="sub" id="stat-tier">Legacy &amp; Lightweight Mobile</div>
         </div>
         <div class="cute-card">
           <h3>System Memory</h3>
@@ -365,14 +374,17 @@ export function getEmbeddedDashboardHtml(): string {
       </div>
 
       <div class="cute-card">
-        <h3 style="margin-bottom:1rem; color:#fff;">Enabled Platform Capabilities</h3>
-        <ul id="capabilities-list" style="list-style:none; display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:0.65rem; font-size:0.85rem; color:#cbd5e1;">
-          <li>✅ Embedded File-Backed Database (WAL)</li>
-          <li>✅ Local REST &amp; Auth Service</li>
-          <li>✅ Quota-Bounded Storage Engine</li>
-          <li>✅ Native Mobile Wakelock Protection</li>
-          <li>✅ Automated SHA-256 Backups</li>
-          <li>✅ LAN Dashboard Management</li>
+        <h3 style="margin-bottom:1rem; color:#fff;">Profile A Supported Features (Maximum Lightweight Suite)</h3>
+        <ul id="capabilities-list" style="list-style:none; display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:0.65rem; font-size:0.85rem; color:#cbd5e1;">
+          <li>✅ Embedded File-Backed Database (WAL Engine)</li>
+          <li>✅ Local REST &amp; RBAC Authentication Service</li>
+          <li>✅ Secure Private File Storage &amp; Blob Downloads</li>
+          <li>✅ Sandboxed File Manager &amp; System Directory Browser</li>
+          <li>✅ Application &amp; Web Hosting Supervisor</li>
+          <li>✅ Native Mobile Wakelock &amp; Battery Saver Protection</li>
+          <li>✅ Automated SHA-256 Backups &amp; Snapshots</li>
+          <li>✅ Hardware Inspection &amp; Profile Simulator</li>
+          <li>✅ Interactive Live REST API Explorer</li>
         </ul>
       </div>
     </div>
@@ -423,8 +435,55 @@ export function getEmbeddedDashboardHtml(): string {
       </div>
     </div>
 
-    <!-- DIAGNOSTICS TAB -->
+    <!-- FILE MANAGER TAB (Profile A Feature) -->
+    <div id="tab-filemanager" class="hidden">
+      <div class="cute-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+          <div>
+            <h3 style="color:#fff;">Server File Browser</h3>
+            <p style="font-size:0.8rem; color:var(--text-muted);" id="fm-current-path">Browsing: /</p>
+          </div>
+          <button class="btn btn-secondary" onclick="loadFileManager('/')">Refresh Directory</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>Name</th><th>Type</th><th>Size</th><th>Modified</th><th>Actions</th></tr></thead>
+            <tbody id="fm-tbody"><tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;">Loading directory...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- APPS TAB (Profile A Feature) -->
+    <div id="tab-apps" class="hidden">
+      <div class="cute-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+          <h3 style="color:#fff;">Hosted Web Applications</h3>
+          <button class="btn btn-secondary" onclick="loadApps()">Refresh Apps</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>App Name</th><th>Type</th><th>Port</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody id="apps-tbody"><tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;">Loading apps...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- DIAGNOSTICS & PROFILE SIMULATOR TAB -->
     <div id="tab-diagnostics" class="hidden">
+      <!-- Hardware Profile Switcher -->
+      <div class="cute-card" style="margin-bottom:1.25rem;">
+        <h3 style="color:#fff; margin-bottom:0.5rem;">🔄 Hardware Profile Simulator</h3>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:0.85rem;">Switch between hardware tiers to test Profile A, Profile B, and Profile C maximum features dynamically.</p>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+          <button class="btn btn-secondary" onclick="switchProfile('profile_a')">Profile A (Lightweight Mobile)</button>
+          <button class="btn btn-secondary" onclick="switchProfile('profile_b')">Profile B (Standard Server)</button>
+          <button class="btn btn-secondary" onclick="switchProfile('profile_c')">Profile C (High Performance)</button>
+          <button class="btn btn-secondary" onclick="switchProfile('auto')">Auto-Detect</button>
+        </div>
+      </div>
+
       <div class="cute-card">
         <h3 style="margin-bottom:1rem; color:#fff;">Hardware &amp; Environment Inspection</h3>
         <div id="diagnostics-content" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:1rem;">
@@ -442,7 +501,7 @@ export function getEmbeddedDashboardHtml(): string {
         </div>
         <div style="overflow-x:auto;">
           <table>
-            <thead><tr><th>Backup ID</th><th>Filename</th><th>Size</th><th>Created</th><th>SHA-256</th></tr></thead>
+            <thead><tr><th>Backup ID</th><th>Filename</th><th>Size</th><th>Created</th><th>Actions</th></tr></thead>
             <tbody id="backups-tbody"><tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;">Loading backups...</td></tr></tbody>
           </table>
         </div>
@@ -458,6 +517,7 @@ export function getEmbeddedDashboardHtml(): string {
           <button class="btn btn-secondary" onclick="testEndpoint('/api/v1/status')">GET /api/v1/status</button>
           <button class="btn btn-secondary" onclick="testEndpoint('/api/v1/capabilities')">GET /api/v1/capabilities</button>
           <button class="btn btn-secondary" onclick="testEndpoint('/api/v1/db/tables')">GET /api/v1/db/tables</button>
+          <button class="btn btn-secondary" onclick="testEndpoint('/api/v1/storage/files')">GET /api/v1/storage/files</button>
         </div>
         <pre id="api-output" style="background:#090d16; padding:1.2rem; border-radius:12px; border:1px solid rgba(255,255,255,0.08); overflow:auto; max-height:400px; font-size:0.8rem; font-family:'JetBrains Mono', monospace; color:#38bdf8;">Click an endpoint above to run a live query.</pre>
       </div>
@@ -475,7 +535,7 @@ export function getEmbeddedDashboardHtml(): string {
       <form onsubmit="submitBootstrap(event)">
         <div class="input-group">
           <label>Bootstrap Token</label>
-          <input type="text" id="bs-token" required placeholder="Found in .androbase/.bootstrap_token" />
+          <input type="text" id="bs-token" required placeholder="Found in .androbase_data/.bootstrap_token" />
         </div>
         <div class="input-group">
           <label>Admin Username</label>
@@ -511,12 +571,12 @@ export function getEmbeddedDashboardHtml(): string {
           <input type="password" id="lg-pass" required />
         </div>
         <div style="margin-top:0.85rem; text-align:center;">
-          <a href="javascript:void(0)" onclick="toggleAuthModal(); openBootstrapModal();" style="color:#10b981; font-size:0.8rem; text-decoration:none; font-weight:600;">
+          <a href="javascript:void(0)" onclick="closeLoginModal(); openBootstrapModal();" style="color:#10b981; font-size:0.8rem; text-decoration:none; font-weight:600;">
             🔑 First time here? Click to set up admin account
           </a>
         </div>
         <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1.5rem;">
-          <button type="button" class="btn btn-secondary" onclick="toggleAuthModal()">Cancel</button>
+          <button type="button" class="btn btn-secondary" onclick="closeLoginModal()">Cancel</button>
           <button type="submit" class="btn btn-primary">Sign In</button>
         </div>
       </form>
@@ -534,11 +594,11 @@ export function getEmbeddedDashboardHtml(): string {
       <form onsubmit="submitInsertRow(event)">
         <div class="input-group">
           <label>Target Table</label>
-          <select id="ins-table-select" style="width:100%; background:#090d16; border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:0.6rem 0.85rem; color:#fff; font-size:0.9rem;"></select>
+          <select id="ins-table-select"></select>
         </div>
         <div class="input-group">
           <label>Record Data (JSON)</label>
-          <textarea id="ins-record-json" rows="6" required style="width:100%; background:#090d16; border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:0.6rem 0.85rem; color:#34d399; font-family:'JetBrains Mono',monospace; font-size:0.85rem;"></textarea>
+          <textarea id="ins-record-json" rows="6" required style="font-family:'JetBrains Mono',monospace; font-size:0.85rem; color:#34d399;"></textarea>
         </div>
         <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:1.5rem;">
           <button type="button" class="btn btn-secondary" onclick="closeInsertRowModal()">Cancel</button>
@@ -559,7 +619,7 @@ export function getEmbeddedDashboardHtml(): string {
       <form onsubmit="submitCreateTable(event)">
         <div class="input-group">
           <label>Table Name</label>
-          <input type="text" id="new-tbl-name" required placeholder="e.g. tasks, customers, inventory" />
+          <input type="text" id="new-tbl-name" required placeholder="e.g. notes, telemetry, items" />
         </div>
         <div class="input-group">
           <label>Primary Key Column</label>
@@ -567,7 +627,7 @@ export function getEmbeddedDashboardHtml(): string {
         </div>
         <div class="input-group">
           <label>Columns (JSON Array: name, type)</label>
-          <textarea id="new-tbl-cols" rows="5" required style="width:100%; background:#090d16; border:1px solid rgba(255,255,255,0.12); border-radius:10px; padding:0.6rem 0.85rem; color:#38bdf8; font-family:'JetBrains Mono',monospace; font-size:0.85rem;">[
+          <textarea id="new-tbl-cols" rows="5" required style="font-family:'JetBrains Mono',monospace; font-size:0.85rem; color:#38bdf8;">[
   { "name": "title", "type": "string", "required": true },
   { "name": "status", "type": "string" },
   { "name": "created_at", "type": "date" }
@@ -598,54 +658,196 @@ export function getEmbeddedDashboardHtml(): string {
   </div>
 
   <script>
+    // In-memory token cache to guard against mobile/iframe storage partitioning
+    let _memoryToken = '';
+    let _memoryUser = null;
+
     function getStoredToken() {
+      if (_memoryToken) return _memoryToken;
       try {
         const s = sessionStorage.getItem('androbase_auth_token') || sessionStorage.getItem('androbase_jwt');
-        if (s) return s;
+        if (s) { _memoryToken = s; return s; }
       } catch(e) {}
       try {
         const l = localStorage.getItem('androbase_auth_token') || localStorage.getItem('androbase_jwt');
-        if (l) return l;
+        if (l) { _memoryToken = l; return l; }
       } catch(e) {}
       if (document.cookie) {
         const m = document.cookie.match(/(?:^|;\s*)androbase_token=([^;]+)/);
-        if (m) return decodeURIComponent(m[1]);
+        if (m) {
+          const val = decodeURIComponent(m[1]);
+          _memoryToken = val;
+          return val;
+        }
       }
       return '';
     }
 
-    let authToken = getStoredToken();
-    let currentUser = null;
+    function setStoredToken(token, user) {
+      _memoryToken = token || '';
+      _memoryUser = user || null;
+      if (!token) {
+        try {
+          sessionStorage.removeItem('androbase_auth_token');
+          sessionStorage.removeItem('androbase_jwt');
+          sessionStorage.removeItem('androbase_auth_user');
+        } catch(e) {}
+        try {
+          localStorage.removeItem('androbase_auth_token');
+          localStorage.removeItem('androbase_jwt');
+          localStorage.removeItem('androbase_auth_user');
+        } catch(e) {}
+        try {
+          document.cookie = 'androbase_token=; path=/; max-age=0; SameSite=Lax';
+        } catch(e) {}
+        return;
+      }
+      try {
+        sessionStorage.setItem('androbase_auth_token', token);
+        sessionStorage.setItem('androbase_jwt', token);
+        if (user) sessionStorage.setItem('androbase_auth_user', JSON.stringify(user));
+      } catch(e) {}
+      try {
+        localStorage.setItem('androbase_auth_token', token);
+        localStorage.setItem('androbase_jwt', token);
+        if (user) localStorage.setItem('androbase_auth_user', JSON.stringify(user));
+      } catch(e) {}
+      try {
+        document.cookie = 'androbase_token=' + encodeURIComponent(token) + '; path=/; SameSite=Lax; max-age=259200';
+      } catch(e) {}
+    }
 
     function getHeaders() {
       const h = { 'Content-Type': 'application/json' };
-      authToken = getStoredToken();
-      if (authToken) {
-        h['Authorization'] = 'Bearer ' + authToken;
-        h['x-auth-token'] = authToken;
-        h['x-access-token'] = authToken;
+      const token = getStoredToken();
+      if (token) {
+        h['Authorization'] = 'Bearer ' + token;
+        h['x-auth-token'] = token;
+        h['x-access-token'] = token;
       }
       return h;
     }
 
     async function api(path, opts = {}) {
+      const token = getStoredToken();
       opts.headers = Object.assign(getHeaders(), opts.headers || {});
+      if (token && !path.includes('token=')) {
+        const sep = path.includes('?') ? '&' : '?';
+        path = path + sep + 'token=' + encodeURIComponent(token);
+      }
       const res = await fetch(path, opts);
-      return res.json();
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 401) {
+        if (data.requiresLogin || data.tokenInvalid || String(data.error || '').includes('expired') || String(data.error || '').includes('Authentication required') || path.includes('/auth/me')) {
+          setStoredToken('', null);
+          updateAuthUI();
+          if (!path.includes('/auth/login') && !path.includes('/auth/bootstrap')) {
+            openLoginModal();
+          }
+        }
+      }
+      return data;
     }
 
+    // Authenticated Blob File Downloader: Works in all iframes and mobile webviews
+    async function downloadFileWithAuth(url, filename) {
+      const token = getStoredToken();
+      if (!token) {
+        alert('Authentication required to download this file. Please sign in with your username and password.');
+        openLoginModal();
+        return;
+      }
+
+      const sep = url.includes('?') ? '&' : '?';
+      const fetchUrl = token && !url.includes('token=') ? (url + sep + 'token=' + encodeURIComponent(token)) : url;
+      const headers = {};
+      if (token) {
+        headers['Authorization'] = 'Bearer ' + token;
+        headers['x-auth-token'] = token;
+        headers['x-access-token'] = token;
+      }
+
+      try {
+        const res = await fetch(fetchUrl, { headers });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          if (res.status === 401) {
+            alert(errData.error || 'Authentication required to download. Please sign in.');
+            openLoginModal();
+          } else {
+            alert('Download failed: ' + (errData.error || res.statusText));
+          }
+          return;
+        }
+
+        const blob = await res.blob();
+        const objectUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = objectUrl;
+        a.download = filename || 'download';
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          window.URL.revokeObjectURL(objectUrl);
+          document.body.removeChild(a);
+        }, 1000);
+      } catch (err) {
+        alert('Download request failed: ' + err.message);
+      }
+    }
+
+    let currentTab = 'overview';
+
     function switchTab(tabId) {
+      currentTab = tabId;
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('main > div[id^="tab-"]').forEach(d => d.classList.add('hidden'));
-      event.target.classList.add('active');
+      if (event && event.target && event.target.classList) {
+        event.target.classList.add('active');
+      }
       const target = document.getElementById('tab-' + tabId);
       if (target) target.classList.remove('hidden');
 
+      const token = getStoredToken();
+      if (['database', 'storage', 'filemanager', 'apps', 'backups'].includes(tabId) && !token) {
+        // Will show locked prompt in the table area
+      }
+
       if (tabId === 'database') loadTables();
       if (tabId === 'storage') loadFiles();
+      if (tabId === 'filemanager') loadFileManager('/');
+      if (tabId === 'apps') loadApps();
       if (tabId === 'diagnostics') loadDiagnostics();
       if (tabId === 'backups') loadBackups();
     }
+
+    function updateAuthUI() {
+      const token = getStoredToken();
+      const btnAuth = document.getElementById('btn-auth-action');
+      const userDisplay = document.getElementById('user-display');
+      const lockCard = document.getElementById('lock-screen-card');
+
+      if (token) {
+        btnAuth.textContent = 'Logout';
+        let username = 'Admin';
+        try {
+          const uRaw = sessionStorage.getItem('androbase_auth_user') || localStorage.getItem('androbase_auth_user');
+          if (uRaw) username = JSON.parse(uRaw).username || 'Admin';
+        } catch(e) {}
+        userDisplay.style.display = 'inline-flex';
+        userDisplay.textContent = username;
+        if (lockCard) lockCard.classList.add('hidden');
+      } else {
+        btnAuth.textContent = 'Login';
+        userDisplay.style.display = 'none';
+        if (serverHasAdmin && lockCard) {
+          lockCard.classList.remove('hidden');
+        }
+      }
+    }
+
+    let serverHasAdmin = false;
 
     async function refreshStatus() {
       try {
@@ -653,9 +855,9 @@ export function getEmbeddedDashboardHtml(): string {
         document.getElementById('stat-status').textContent = d.status === 'online' ? 'Online' : (d.status || 'Active');
         document.getElementById('stat-uptime').textContent = 'Uptime: ' + Math.floor((d.uptimeSeconds || 0) / 60) + 'm ' + ((d.uptimeSeconds || 0) % 60) + 's';
 
-        const profileStr = d.profileName || d.profile || 'Profile C';
+        const profileStr = d.profileName || d.profile || 'Profile A';
         document.getElementById('stat-profile').textContent = profileStr.split('—')[0].trim();
-        document.getElementById('stat-tier').textContent = profileStr.includes('—') ? profileStr.split('—')[1].trim() : (d.device ? d.device.arch + ' / ' + d.device.nodeVersion : 'Standard Mobile');
+        document.getElementById('stat-tier').textContent = profileStr.includes('—') ? profileStr.split('—')[1].trim() : 'Legacy & Lightweight Mobile';
         document.getElementById('hdr-profile').textContent = profileStr.split('—')[0].trim();
 
         const freeMb = (d.device && d.device.freeMemoryMb != null) ? d.device.freeMemoryMb : (d.memory ? d.memory.freeMb : '--');
@@ -668,16 +870,17 @@ export function getEmbeddedDashboardHtml(): string {
         const port = (d.network && d.network.port) || 3000;
         document.getElementById('stat-lan').textContent = lanIp + ':' + port;
 
-        const hasAdmin = !!d.hasAdmin;
+        serverHasAdmin = !!d.hasAdmin;
         const banner = document.getElementById('bootstrap-banner');
         const btnSetup = document.getElementById('btn-setup-admin');
         const cardSetup = document.getElementById('overview-setup-card');
+        const lockCard = document.getElementById('lock-screen-card');
 
-        if (!hasAdmin) {
+        if (!serverHasAdmin) {
           if (banner) banner.classList.remove('hidden');
           if (btnSetup) btnSetup.style.display = 'inline-flex';
           if (cardSetup) cardSetup.classList.remove('hidden');
-
+          if (lockCard) lockCard.classList.add('hidden');
           if (!sessionStorage.getItem('androbase_auto_bootstrap_shown')) {
             sessionStorage.setItem('androbase_auto_bootstrap_shown', 'true');
             openBootstrapModal();
@@ -686,19 +889,15 @@ export function getEmbeddedDashboardHtml(): string {
           if (banner) banner.classList.add('hidden');
           if (btnSetup) btnSetup.style.display = 'none';
           if (cardSetup) cardSetup.classList.add('hidden');
-        }
-
-        const userRaw = localStorage.getItem('androbase_auth_user');
-        if (authToken) {
-          document.getElementById('btn-auth-action').textContent = 'Logout';
-          if (userRaw) {
-            try {
-              const u = JSON.parse(userRaw);
-              document.getElementById('user-display').style.display = 'inline-flex';
-              document.getElementById('user-display').textContent = u.username;
-            } catch(e) {}
+          const token = getStoredToken();
+          if (!token && lockCard) {
+            lockCard.classList.remove('hidden');
+          } else if (lockCard) {
+            lockCard.classList.add('hidden');
           }
         }
+
+        updateAuthUI();
       } catch (e) {
         console.error('Failed to load status', e);
       }
@@ -707,22 +906,31 @@ export function getEmbeddedDashboardHtml(): string {
     let currentViewingTable = '';
 
     async function loadTables() {
+      const token = getStoredToken();
+      const tb = document.getElementById('tables-tbody');
+      if (!token) {
+        if (tb) tb.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:2.5rem;"><div style="color:var(--text-muted); font-size:0.95rem; margin-bottom:0.75rem;">🔒 Server Locked. Administrator sign in required to view database tables.</div><button class="btn btn-primary" onclick="openLoginModal()">Sign In to View Database</button></td></tr>';
+        return;
+      }
       try {
         const d = await api('/api/v1/db/tables');
+        if (d.error && (d.requiresLogin || String(d.error).includes('Authentication required') || String(d.error).includes('expired'))) {
+          if (tb) tb.innerHTML = '<tr><td colspan="3" style="text-align:center; padding:2.5rem;"><div style="color:var(--text-muted); font-size:0.95rem; margin-bottom:0.75rem;">🔒 ' + d.error + '</div><button class="btn btn-primary" onclick="openLoginModal()">Sign In to Server</button></td></tr>';
+          return;
+        }
         const list = Array.isArray(d) ? d : (d.tables || d.data || []);
-        const tb = document.getElementById('tables-tbody');
         const sel = document.getElementById('ins-table-select');
         if (sel) {
           sel.innerHTML = list.map(t => '<option value="' + t.name + '">' + t.name + '</option>').join('');
         }
 
         if (list.length === 0) {
-          tb.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:2rem;">No tables created yet.</td></tr>';
+          tb.innerHTML = '<tr><td colspan="3" style="text-align:center; color:var(--text-muted); padding:2rem;">No tables created yet. Click "New Table" above to create one.</td></tr>';
           return;
         }
         tb.innerHTML = list.map(t => '<tr><td><strong>' + t.name + '</strong></td><td>' + (t.rowCount != null ? t.rowCount : (t.recordCount || 0)) + ' rows</td><td><div style="display:flex; gap:0.4rem; align-items:center;"><button class="btn btn-secondary" onclick="viewTable(\\'' + t.name + '\\')">Query Rows</button><button class="btn btn-primary" style="padding:0.35rem 0.65rem; font-size:0.75rem;" onclick="openInsertRowModal(\\'' + t.name + '\\')">➕ Add Row</button>' + (t.name.startsWith('_') ? '' : '<button class="btn btn-secondary" style="color:#f43f5e; padding:0.35rem 0.65rem; font-size:0.75rem;" onclick="dropTable(\\'' + t.name + '\\')">🗑️</button>') + '</div></td></tr>').join('');
       } catch (e) {
-        document.getElementById('tables-tbody').innerHTML = '<tr><td colspan="3" style="color:#ef4444; padding:2rem; text-align:center;">Failed to load tables. Sign in to view database.</td></tr>';
+        if (tb) tb.innerHTML = '<tr><td colspan="3" style="color:#ef4444; padding:2rem; text-align:center;">Failed to load tables: ' + e.message + '</td></tr>';
       }
     }
 
@@ -791,20 +999,14 @@ export function getEmbeddedDashboardHtml(): string {
       if (t === 'notes') {
         document.getElementById('ins-record-json').value = JSON.stringify({
           title: "My Note on Phone",
-          content: "Stored on Android smartphone via AndroBase!",
+          content: "Stored on Android smartphone via AndroBase Profile A!",
           tags: ["android", "mobile", "database"]
-        }, null, 2);
-      } else if (t === 'sensor_telemetry') {
-        document.getElementById('ins-record-json').value = JSON.stringify({
-          device_id: "phone_01",
-          battery_pct: 88,
-          temperature_c: 28.5,
-          network_type: "wifi"
         }, null, 2);
       } else {
         document.getElementById('ins-record-json').value = JSON.stringify({
           title: "Sample entry",
-          data: "Value"
+          status: "active",
+          created_at: new Date().toISOString()
         }, null, 2);
       }
     }
@@ -826,7 +1028,7 @@ export function getEmbeddedDashboardHtml(): string {
       }
 
       try {
-        const res = await api('/api/v1/db/records/' + tableName, {
+        await api('/api/v1/db/records/' + tableName, {
           method: 'POST',
           body: JSON.stringify(record)
         });
@@ -862,7 +1064,7 @@ export function getEmbeddedDashboardHtml(): string {
       }
 
       try {
-        const res = await api('/api/v1/db/tables', {
+        await api('/api/v1/db/tables', {
           method: 'POST',
           body: JSON.stringify({ name, primaryKey, columns })
         });
@@ -887,6 +1089,13 @@ export function getEmbeddedDashboardHtml(): string {
 
     async function submitFileUpload(e) {
       e.preventDefault();
+      const token = getStoredToken();
+      if (!token) {
+        alert('Please sign in to upload files.');
+        openLoginModal();
+        return;
+      }
+
       const picker = document.getElementById('file-picker');
       const desc = document.getElementById('file-desc').value;
       const btn = document.getElementById('btn-upload');
@@ -906,20 +1115,30 @@ export function getEmbeddedDashboardHtml(): string {
 
       try {
         const headers = {};
-        if (authToken) headers['Authorization'] = 'Bearer ' + authToken;
-        const res = await fetch('/api/v1/storage/files', {
+        if (token) {
+          headers['Authorization'] = 'Bearer ' + token;
+          headers['x-auth-token'] = token;
+          headers['x-access-token'] = token;
+        }
+        const uploadUrl = token ? ('/api/v1/storage/files?token=' + encodeURIComponent(token)) : '/api/v1/storage/files';
+        const res = await fetch(uploadUrl, {
           method: 'POST',
           headers,
           body: formData
         });
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         if (res.ok) {
           alert('File "' + file.name + '" uploaded successfully!');
           picker.value = '';
           document.getElementById('file-desc').value = '';
           loadFiles();
         } else {
-          alert('Upload failed: ' + (data.error || 'Server error'));
+          if (res.status === 401) {
+            alert(data.error || 'Authentication required to upload. Please sign in.');
+            openLoginModal();
+          } else {
+            alert('Upload failed: ' + (data.error || 'Server error'));
+          }
         }
       } catch (err) {
         alert('Upload request failed: ' + err.message);
@@ -941,17 +1160,83 @@ export function getEmbeddedDashboardHtml(): string {
     }
 
     async function loadFiles() {
+      const token = getStoredToken();
+      const tb = document.getElementById('files-tbody');
+      if (!token) {
+        if (tb) tb.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:2.5rem;"><div style="color:var(--text-muted); font-size:0.95rem; margin-bottom:0.75rem;">🔒 Server Locked. Administrator sign in required to access files.</div><button class="btn btn-primary" onclick="openLoginModal()">Sign In with Username &amp; Password</button></td></tr>';
+        return;
+      }
       try {
         const d = await api('/api/v1/storage/files');
-        const list = Array.isArray(d) ? d : (d.files || d.data || []);
-        const tb = document.getElementById('files-tbody');
-        if (list.length === 0) {
-          tb.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;">No files uploaded yet.</td></tr>';
+        if (d.error && (d.requiresLogin || String(d.error).includes('Authentication required') || String(d.error).includes('expired'))) {
+          if (tb) tb.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:2.5rem;"><div style="color:var(--text-muted); font-size:0.95rem; margin-bottom:0.75rem;">🔒 ' + d.error + '</div><button class="btn btn-primary" onclick="openLoginModal()">Sign In to Server</button></td></tr>';
           return;
         }
-        tb.innerHTML = list.map(f => '<tr><td>' + (f.originalName || f.name) + '</td><td>' + ((f.sizeBytes || 0) / 1024).toFixed(1) + ' KB</td><td>' + (f.uploadedAt || f.createdAt || '').split('T')[0] + '</td><td><code>' + (f.mimeType || 'unknown') + '</code></td><td><div style="display:flex; gap:0.4rem; align-items:center;"><a href="/api/v1/storage/' + f.id + (authToken ? '?token=' + encodeURIComponent(authToken) : '') + '" target="_blank" class="btn btn-secondary" style="padding:0.35rem 0.65rem; font-size:0.75rem;">Download</a><button class="btn btn-secondary" style="color:#f43f5e; padding:0.35rem 0.65rem; font-size:0.75rem;" onclick="deleteFile(\\'' + f.id + '\\', \\'' + (f.originalName || f.name) + '\\')">🗑️</button></div></td></tr>').join('');
+        const list = Array.isArray(d) ? d : (d.files || d.data || []);
+        if (list.length === 0) {
+          tb.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;">No files uploaded yet. Use the upload box above to add files.</td></tr>';
+          return;
+        }
+        tb.innerHTML = list.map(f => {
+          const name = f.originalName || f.name || 'file';
+          const safeName = name.replace(/'/g, "\\'");
+          return '<tr><td><strong>' + name + '</strong></td><td>' + ((f.sizeBytes || 0) / 1024).toFixed(1) + ' KB</td><td>' + (f.uploadedAt || f.createdAt || '').split('T')[0] + '</td><td><code>' + (f.mimeType || 'unknown') + '</code></td><td><div style="display:flex; gap:0.4rem; align-items:center;"><button class="btn btn-secondary" style="padding:0.35rem 0.65rem; font-size:0.75rem;" onclick="downloadFileWithAuth(\\'/api/v1/storage/' + f.id + '\\', \\'' + safeName + '\\')">⬇️ Download</button><button class="btn btn-secondary" style="color:#f43f5e; padding:0.35rem 0.65rem; font-size:0.75rem;" onclick="deleteFile(\\'' + f.id + '\\', \\'' + safeName + '\\')">🗑️</button></div></td></tr>';
+        }).join('');
       } catch (e) {
-        document.getElementById('files-tbody').innerHTML = '<tr><td colspan="5" style="color:#ef4444; padding:2rem; text-align:center;">Failed to load files. Sign in to view storage.</td></tr>';
+        if (tb) tb.innerHTML = '<tr><td colspan="5" style="color:#ef4444; padding:2rem; text-align:center;">Failed to load files: ' + e.message + '</td></tr>';
+      }
+    }
+
+    async function loadFileManager(dirPath = '/') {
+      const token = getStoredToken();
+      const tb = document.getElementById('fm-tbody');
+      const pathEl = document.getElementById('fm-current-path');
+      if (pathEl) pathEl.textContent = 'Browsing: ' + dirPath;
+
+      if (!token) {
+        if (tb) tb.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:2.5rem;"><div style="color:var(--text-muted); font-size:0.95rem; margin-bottom:0.75rem;">🔒 Server Locked. Administrator sign in required to browse files.</div><button class="btn btn-primary" onclick="openLoginModal()">Sign In to Browse Files</button></td></tr>';
+        return;
+      }
+      try {
+        const d = await api('/api/v1/files/list?path=' + encodeURIComponent(dirPath));
+        if (d.error) {
+          if (tb) tb.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#ef4444; padding:2rem;">' + d.error + '</td></tr>';
+          return;
+        }
+        const entries = d.entries || [];
+        if (entries.length === 0) {
+          tb.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;">Empty directory.</td></tr>';
+          return;
+        }
+        tb.innerHTML = entries.map(e => {
+          const isDir = e.type === 'directory';
+          const icon = isDir ? '📁' : '📄';
+          const safePath = e.path.replace(/'/g, "\\'");
+          const safeName = e.name.replace(/'/g, "\\'");
+          return '<tr><td>' + icon + ' <strong>' + e.name + '</strong></td><td><code>' + e.type + '</code></td><td>' + (isDir ? '--' : ((e.size || 0) / 1024).toFixed(1) + ' KB') + '</td><td>' + (e.modifiedAt || '').split('T')[0] + '</td><td><div style="display:flex; gap:0.4rem; align-items:center;">' + (isDir ? '<button class="btn btn-secondary" style="padding:0.35rem 0.65rem; font-size:0.75rem;" onclick="loadFileManager(\\'' + safePath + '\\')">Open</button>' : '<button class="btn btn-secondary" style="padding:0.35rem 0.65rem; font-size:0.75rem;" onclick="downloadFileWithAuth(\\'/api/v1/files/download?path=' + encodeURIComponent(e.path) + '\\', \\'' + safeName + '\\')">⬇️ Download</button>') + '</div></td></tr>';
+        }).join('');
+      } catch (e) {
+        if (tb) tb.innerHTML = '<tr><td colspan="5" style="color:#ef4444; padding:2rem; text-align:center;">Failed to list directory: ' + e.message + '</td></tr>';
+      }
+    }
+
+    async function loadApps() {
+      const token = getStoredToken();
+      const tb = document.getElementById('apps-tbody');
+      if (!token) {
+        if (tb) tb.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:2.5rem;"><div style="color:var(--text-muted); font-size:0.95rem; margin-bottom:0.75rem;">🔒 Server Locked. Administrator sign in required to manage apps.</div><button class="btn btn-primary" onclick="openLoginModal()">Sign In to Manage Apps</button></td></tr>';
+        return;
+      }
+      try {
+        const d = await api('/api/v1/apps');
+        const list = Array.isArray(d) ? d : (d.apps || []);
+        if (list.length === 0) {
+          tb.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;">No web applications registered. Standard Profile A services running cleanly.</td></tr>';
+          return;
+        }
+        tb.innerHTML = list.map(a => '<tr><td><strong>' + a.name + '</strong></td><td><code>' + a.type + '</code></td><td>:' + a.port + '</td><td><span class="badge badge-success">' + a.status + '</span></td><td><button class="btn btn-secondary" style="padding:0.35rem 0.65rem; font-size:0.75rem;">Manage</button></td></tr>').join('');
+      } catch (e) {
+        if (tb) tb.innerHTML = '<tr><td colspan="5" style="color:#ef4444; padding:2rem; text-align:center;">Failed to load apps: ' + e.message + '</td></tr>';
       }
     }
 
@@ -966,25 +1251,63 @@ export function getEmbeddedDashboardHtml(): string {
       }
     }
 
+    async function switchProfile(p) {
+      const token = getStoredToken();
+      if (!token) {
+        alert('Administrator sign in required to change hardware profile simulation.');
+        openLoginModal();
+        return;
+      }
+      try {
+        const res = await api('/api/v1/system/profile', {
+          method: 'POST',
+          body: JSON.stringify({ profile: p })
+        });
+        alert(res.message || 'Profile updated successfully.');
+        refreshStatus();
+        loadDiagnostics();
+      } catch (e) {
+        alert('Failed to switch profile: ' + e.message);
+      }
+    }
+
     async function loadBackups() {
+      const token = getStoredToken();
+      const tb = document.getElementById('backups-tbody');
+      if (!token) {
+        if (tb) tb.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:2.5rem;"><div style="color:var(--text-muted); font-size:0.95rem; margin-bottom:0.75rem;">🔒 Server Locked. Administrator sign in required to manage backups.</div><button class="btn btn-primary" onclick="openLoginModal()">Sign In to Manage Backups</button></td></tr>';
+        return;
+      }
       try {
         const d = await api('/api/v1/backups');
+        if (d.error && (d.requiresLogin || String(d.error).includes('Authentication required') || String(d.error).includes('expired'))) {
+          if (tb) tb.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:2.5rem;"><div style="color:var(--text-muted); font-size:0.95rem; margin-bottom:0.75rem;">🔒 ' + d.error + '</div><button class="btn btn-primary" onclick="openLoginModal()">Sign In to Server</button></td></tr>';
+          return;
+        }
         const list = Array.isArray(d) ? d : (d.backups || d.data || []);
-        const tb = document.getElementById('backups-tbody');
         if (list.length === 0) {
           tb.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;">No snapshot backups created yet.</td></tr>';
           return;
         }
-        tb.innerHTML = list.map(b => '<tr><td><code>' + (b.id ? b.id.substring(0,8) : '--') + '</code></td><td>' + b.filename + '</td><td>' + ((b.sizeBytes || 0) / 1024).toFixed(1) + ' KB</td><td>' + (b.createdAt || '').split('T')[0] + '</td><td><code>' + (b.sha256 ? b.sha256.substring(0, 16) : '') + '...</code></td></tr>').join('');
+        tb.innerHTML = list.map(b => {
+          const safeFn = b.filename.replace(/'/g, "\\'");
+          return '<tr><td><code>' + (b.id ? b.id.substring(0,8) : '--') + '</code></td><td><strong>' + b.filename + '</strong></td><td>' + ((b.sizeBytes || 0) / 1024).toFixed(1) + ' KB</td><td>' + (b.createdAt || '').split('T')[0] + '</td><td><div style="display:flex; gap:0.4rem; align-items:center;"><button class="btn btn-secondary" style="padding:0.35rem 0.65rem; font-size:0.75rem;" onclick="downloadFileWithAuth(\\'/api/v1/backup/download/' + safeFn + '\\', \\'' + safeFn + '\\')">⬇️ Export</button></div></td></tr>';
+        }).join('');
       } catch (e) {
-        document.getElementById('backups-tbody').innerHTML = '<tr><td colspan="5" style="color:#ef4444; padding:2rem; text-align:center;">Failed to load backups. Sign in to manage snapshots.</td></tr>';
+        if (tb) tb.innerHTML = '<tr><td colspan="5" style="color:#ef4444; padding:2rem; text-align:center;">Failed to load backups: ' + e.message + '</td></tr>';
       }
     }
 
     async function createBackup() {
+      const token = getStoredToken();
+      if (!token) {
+        alert('Please sign in to create backups.');
+        openLoginModal();
+        return;
+      }
       try {
         const d = await api('/api/v1/backups', { method: 'POST', body: JSON.stringify({ label: 'manual' }) });
-        alert('Snapshot created successfully! Archive: ' + d.backup.filename);
+        alert('Snapshot created successfully! Archive: ' + (d.backup ? d.backup.filename : 'snapshot.json'));
         loadBackups();
       } catch (e) {
         alert('Failed to create backup: ' + e.message);
@@ -1003,45 +1326,48 @@ export function getEmbeddedDashboardHtml(): string {
 
     function openBootstrapModal() { document.getElementById('bootstrap-modal').classList.remove('hidden'); }
     function closeBootstrapModal() { document.getElementById('bootstrap-modal').classList.add('hidden'); }
+    function openLoginModal() { document.getElementById('login-modal').classList.remove('hidden'); }
+    function closeLoginModal() { document.getElementById('login-modal').classList.add('hidden'); }
+
     function toggleAuthModal() {
-      if (authToken) {
-        authToken = '';
-        localStorage.removeItem('androbase_auth_token');
-        localStorage.removeItem('androbase_jwt');
-        localStorage.removeItem('androbase_auth_user');
-        document.getElementById('btn-auth-action').textContent = 'Login';
-        document.getElementById('user-display').style.display = 'none';
+      const token = getStoredToken();
+      if (token) {
+        setStoredToken('', null);
+        updateAuthUI();
         refreshStatus();
+        switchTab(currentTab);
       } else {
-        document.getElementById('login-modal').classList.toggle('hidden');
+        openLoginModal();
       }
     }
 
-    async function submitBootstrap(e) {
+    async function submitQuickLogin(e) {
       e.preventDefault();
-      const token = document.getElementById('bs-token').value.trim();
-      const username = document.getElementById('bs-user').value.trim();
-      const password = document.getElementById('bs-pass').value;
+      const username = document.getElementById('ql-user').value.trim();
+      const password = document.getElementById('ql-pass').value;
+      const btn = document.getElementById('btn-quick-login');
+      btn.disabled = true;
+      btn.textContent = 'Verifying...';
+
       try {
-        const res = await api('/api/v1/auth/bootstrap', { method: 'POST', body: JSON.stringify({ bootstrapToken: token, username, password }) });
+        const res = await api('/api/v1/auth/login', {
+          method: 'POST',
+          body: JSON.stringify({ identifier: username, username, password })
+        });
         if (res.token) {
-          authToken = res.token;
-          localStorage.setItem('androbase_auth_token', authToken);
-          localStorage.setItem('androbase_jwt', authToken);
-          localStorage.setItem('androbase_auth_user', JSON.stringify(res.user));
-          alert('Admin initialized successfully!');
-          closeBootstrapModal();
-          document.getElementById('btn-auth-action').textContent = 'Logout';
-          document.getElementById('user-display').style.display = 'inline-flex';
-          document.getElementById('user-display').textContent = res.user.username;
+          setStoredToken(res.token, res.user);
+          document.getElementById('ql-pass').value = '';
+          updateAuthUI();
           refreshStatus();
-          loadTables();
-          loadFiles();
+          switchTab(currentTab);
         } else {
-          alert('Bootstrap error: ' + (res.error || 'Failed'));
+          alert('Login failed: ' + (res.error || 'Invalid credentials'));
         }
       } catch (err) {
-        alert('Bootstrap request failed: ' + err.message);
+        alert('Login request failed: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Sign In & Unlock';
       }
     }
 
@@ -1055,17 +1381,12 @@ export function getEmbeddedDashboardHtml(): string {
           body: JSON.stringify({ identifier: username, username, password })
         });
         if (res.token) {
-          authToken = res.token;
-          localStorage.setItem('androbase_auth_token', authToken);
-          localStorage.setItem('androbase_jwt', authToken);
-          localStorage.setItem('androbase_auth_user', JSON.stringify(res.user));
-          document.getElementById('login-modal').classList.add('hidden');
-          document.getElementById('btn-auth-action').textContent = 'Logout';
-          document.getElementById('user-display').style.display = 'inline-flex';
-          document.getElementById('user-display').textContent = res.user.username;
+          setStoredToken(res.token, res.user);
+          closeLoginModal();
+          document.getElementById('lg-pass').value = '';
+          updateAuthUI();
           refreshStatus();
-          loadTables();
-          loadFiles();
+          switchTab(currentTab);
         } else {
           alert('Login failed: ' + (res.error || 'Invalid credentials'));
         }
@@ -1074,7 +1395,32 @@ export function getEmbeddedDashboardHtml(): string {
       }
     }
 
-    // Initialize
+    async function submitBootstrap(e) {
+      e.preventDefault();
+      const token = document.getElementById('bs-token').value.trim();
+      const username = document.getElementById('bs-user').value.trim();
+      const password = document.getElementById('bs-pass').value;
+      try {
+        const res = await api('/api/v1/auth/bootstrap', {
+          method: 'POST',
+          body: JSON.stringify({ bootstrapToken: token, username, password })
+        });
+        if (res.token) {
+          setStoredToken(res.token, res.user);
+          alert('Admin initialized successfully!');
+          closeBootstrapModal();
+          updateAuthUI();
+          refreshStatus();
+          switchTab(currentTab);
+        } else {
+          alert('Bootstrap error: ' + (res.error || 'Failed'));
+        }
+      } catch (err) {
+        alert('Bootstrap request failed: ' + err.message);
+      }
+    }
+
+    // Initial load
     refreshStatus();
     setInterval(refreshStatus, 10000);
   </script>
