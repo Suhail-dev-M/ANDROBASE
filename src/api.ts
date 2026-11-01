@@ -180,6 +180,58 @@ export class ApiClient {
     return data as T;
   }
 
+  public static getAuthenticatedUrl(path: string, params: Record<string, string> = {}): string {
+    const query = new URLSearchParams(params);
+    const token = this.getToken();
+    if (token) {
+      query.set('token', token);
+    }
+    const cleanPath = path.startsWith('/api/v1') ? path : `/api/v1${path.startsWith('/') ? path : '/' + path}`;
+    const qs = query.toString();
+    return qs ? `${cleanPath}?${qs}` : cleanPath;
+  }
+
+  public static async downloadFile(url: string, defaultFilename: string = 'download'): Promise<void> {
+    const headers: Record<string, string> = {};
+    const token = this.getToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+      headers['x-auth-token'] = token;
+      headers['x-access-token'] = token;
+    }
+
+    let fetchUrl = url;
+    if (token && !url.includes('token=')) {
+      const sep = url.includes('?') ? '&' : '?';
+      fetchUrl = `${url}${sep}token=${encodeURIComponent(token)}`;
+    }
+
+    const res = await fetch(fetchUrl, { headers });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}));
+      throw new Error(errData.error || errData.message || `Download failed (${res.status})`);
+    }
+
+    const blob = await res.blob();
+    const disposition = res.headers.get('content-disposition');
+    let filename = defaultFilename;
+    if (disposition && disposition.includes('filename=')) {
+      const match = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+      if (match && match[1]) {
+        filename = match[1].replace(/['"]/g, '').trim();
+      }
+    }
+
+    const blobUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => window.URL.revokeObjectURL(blobUrl), 1000);
+  }
+
   // ----------------------------------------------------
   // System Health & Telemetry
   // ----------------------------------------------------

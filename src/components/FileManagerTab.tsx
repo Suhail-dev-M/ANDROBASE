@@ -358,14 +358,19 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({ onOpenLogin, onO
                             >
                               <Edit3 className="w-3.5 h-3.5" />
                             </button>
-                            <a
-                              href={`/api/v1/files/download?path=${encodeURIComponent(entry.path)}`}
-                              download
+                            <button
+                              onClick={() => {
+                                const downloadUrl = ApiClient.getAuthenticatedUrl('/files/download', { path: entry.path });
+                                ApiClient.downloadFile(downloadUrl, entry.name).catch((err) => {
+                                  setError(err.message || 'Download failed');
+                                });
+                              }}
                               className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-cyan-400 transition-colors"
                               title="Download"
+                              aria-label={`Download ${entry.name}`}
                             >
                               <Download className="w-3.5 h-3.5" />
-                            </a>
+                            </button>
                           </>
                         )}
                         <button
@@ -488,7 +493,7 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({ onOpenLogin, onO
             <div className="flex items-center justify-center bg-slate-950 rounded-xl p-4 min-h-[300px]">
               {previewMedia.type === 'image' && (
                 <img
-                  src={`/api/v1/files/download?path=${encodeURIComponent(previewMedia.path)}`}
+                  src={ApiClient.getAuthenticatedUrl('/files/download', { path: previewMedia.path })}
                   alt={previewMedia.name}
                   className="max-h-[60vh] max-w-full rounded-lg object-contain"
                 />
@@ -497,7 +502,7 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({ onOpenLogin, onO
                 <video
                   controls
                   autoPlay
-                  src={`/api/v1/files/download?path=${encodeURIComponent(previewMedia.path)}`}
+                  src={ApiClient.getAuthenticatedUrl('/files/download', { path: previewMedia.path })}
                   className="max-h-[60vh] max-w-full rounded-lg"
                 />
               )}
@@ -505,7 +510,7 @@ export const FileManagerTab: React.FC<FileManagerTabProps> = ({ onOpenLogin, onO
                 <audio
                   controls
                   autoPlay
-                  src={`/api/v1/files/download?path=${encodeURIComponent(previewMedia.path)}`}
+                  src={ApiClient.getAuthenticatedUrl('/files/download', { path: previewMedia.path })}
                   className="w-full"
                 />
               )}

@@ -132,7 +132,7 @@ export const MediaServerTab: React.FC = () => {
               <video
                 controls
                 autoPlay
-                src={`/api/v1/media/stream?path=${encodeURIComponent(activeMedia.path)}`}
+                src={ApiClient.getAuthenticatedUrl('/media/stream', { path: activeMedia.path })}
                 className="max-h-[60vh] max-w-full rounded-lg"
               />
             )}
@@ -140,13 +140,13 @@ export const MediaServerTab: React.FC = () => {
               <audio
                 controls
                 autoPlay
-                src={`/api/v1/media/stream?path=${encodeURIComponent(activeMedia.path)}`}
+                src={ApiClient.getAuthenticatedUrl('/media/stream', { path: activeMedia.path })}
                 className="w-full"
               />
             )}
             {activeMedia.type === 'image' && (
               <img
-                src={`/api/v1/media/stream?path=${encodeURIComponent(activeMedia.path)}`}
+                src={ApiClient.getAuthenticatedUrl('/media/stream', { path: activeMedia.path })}
                 alt={activeMedia.name}
                 className="max-h-[60vh] max-w-full rounded-lg object-contain"
               />

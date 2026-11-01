@@ -227,6 +227,27 @@ async function runAllTests() {
     assert.ok(profileA.enabledFeatures.includes('Application & Web Hosting Manager'));
   });
 
+  await test('Authenticated download links succeed via query parameter token (?token=...)', () => {
+    const admin = AuthService.getPrimaryAdmin();
+    assert.ok(admin, 'Primary admin exists');
+    const session = AuthService.createSession(admin as any, '127.0.0.1', 'test-download');
+
+    // Simulate direct browser GET /files/download?path=test.txt&token=...
+    const reqWithToken = {
+      headers: {},
+      query: { path: 'test.txt', token: session.token },
+    } as any;
+    const extracted = extractTokenFromRequest(reqWithToken);
+    assert.strictEqual(extracted, session.token, 'Extracted token must match session token');
+    const auth = AuthService.authenticateToken(extracted!);
+    assert.ok(auth, 'Token must authenticate successfully for download');
+    assert.strictEqual(auth?.user.username, admin?.username);
+
+    // Unauthenticated download request
+    const reqWithoutToken = { headers: {}, query: { path: 'test.txt' } } as any;
+    assert.strictEqual(extractTokenFromRequest(reqWithoutToken), undefined, 'Must reject unauthenticated download');
+  });
+
   console.log('\n--- 4. SECURITY TESTS: Path Traversal & Executable Upload Guards ---');
   await test('File storage sanitizes malicious paths and blocks directory traversal', () => {
     const maliciousName = '../../../../etc/passwd';

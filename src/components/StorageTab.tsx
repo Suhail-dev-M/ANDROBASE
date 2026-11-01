@@ -321,11 +321,13 @@ export const StorageTab: React.FC = () => {
                               {copiedId === file.id ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                             </button>
                             <a
-                              href={`/api/v1/storage/${file.id}`}
+                              href={ApiClient.getAuthenticatedUrl(`/storage/${file.id}`)}
                               download={file.originalName}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors inline-block"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                ApiClient.downloadFile(ApiClient.getAuthenticatedUrl(`/storage/${file.id}`), file.originalName);
+                              }}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors inline-block cursor-pointer"
                               title="Download File"
                               aria-label="Download file"
                             >

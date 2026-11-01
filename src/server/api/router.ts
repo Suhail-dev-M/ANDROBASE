@@ -74,7 +74,7 @@ export const extractTokenFromRequest = (req: Request): string | undefined => {
   }
 
   // 3. Query parameter (useful for media streaming, download links, img tags)
-  const qToken = (req.query?.token || req.query?.auth || req.query?.access_token) as string | undefined;
+  const qToken = (req.query?.token || req.query?.auth || req.query?.access_token || req.query?.bearer || req.query?.t) as string | undefined;
   if (qToken && typeof qToken === 'string' && qToken.trim()) {
     return qToken.trim();
   }
@@ -876,7 +876,9 @@ apiRouter.get('/files/download', requirePermission('files:read'), (req: Authenti
     if (!fs.existsSync(resolved) || fs.statSync(resolved).isDirectory()) {
       return res.status(404).json({ error: 'File not found' });
     }
-    res.download(resolved);
+    const filename = path.basename(resolved);
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
+    res.download(resolved, filename);
   } catch (err: any) {
     res.status(400).json({ error: err.message });
   }

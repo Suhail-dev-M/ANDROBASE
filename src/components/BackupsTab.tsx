@@ -289,9 +289,13 @@ export const BackupsTab: React.FC = () => {
                     <td className="py-3 px-3 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <a
-                          href={`/api/v1/backup/download/${b.filename}`}
+                          href={ApiClient.getAuthenticatedUrl(`/backup/download/${b.filename}`)}
                           download={b.filename}
-                          className="cute-pill-btn px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-sans text-xs flex items-center gap-1.5 transition-colors border border-slate-700/60"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            ApiClient.downloadFile(ApiClient.getAuthenticatedUrl(`/backup/download/${b.filename}`), b.filename);
+                          }}
+                          className="cute-pill-btn px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-sans text-xs flex items-center gap-1.5 transition-colors border border-slate-700/60 cursor-pointer"
                           title="Download Snapshot to PC/Device"
                         >
                           <Download className="w-3.5 h-3.5 text-cyan-400" />
